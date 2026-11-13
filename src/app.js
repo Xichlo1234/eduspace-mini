@@ -9,6 +9,7 @@ const { AppError } = require('./lib/errors');
 const users = require('./services/users');
 const perms = require('./services/perms');
 const settings = require('./services/settings');
+const views = require('./views');
 
 /**
  * state = { db, demo } – giữ tham chiếu CSDL để có thể khôi phục (đổi file) khi đang chạy.
@@ -16,17 +17,17 @@ const settings = require('./services/settings');
 function createApp(state) {
   const app = express();
   app.disable('x-powered-by');
-  app.set('view engine', 'ejs');
-  app.set('views', path.join(__dirname, 'views'));
-  app.set('trust proxy', 'loopback');
+  // Cloudflare: yêu cầu đi qua Worker (đã gắn X-Forwarded-Proto/For); Node: chỉ tin proxy trên cùng máy (cloudflared, nginx)
+  app.set('trust proxy', state.cloudflare ? true : 'loopback');
   app.use((req, res, next) => {
     res.set('X-Frame-Options', 'SAMEORIGIN');
     res.set('X-Content-Type-Options', 'nosniff');
     res.set('Referrer-Policy', 'same-origin');
     next();
   });
-  app.use('/public', express.static(path.join(__dirname, '..', 'public'), { maxAge: '1h' }));
+  if (!state.cloudflare) app.use('/public', express.static(path.join(__dirname, '..', 'public'), { maxAge: '1h' })); // Cloudflare: phục vụ bằng static assets
   app.use(express.urlencoded({ extended: true, limit: '2mb', parameterLimit: 10000 }));
+  app.use((req, res, next) => { if (!req.body) req.body = {}; next(); });
   app.use(cookieParser());
 
   app.use((req, res, next) => {
@@ -44,6 +45,13 @@ function createApp(state) {
       csrf: req.user ? req.user.csrf : null, D, M, vnd: M.vnd, dmy: D.display, path: req.path, query: req.query, center: s, demo: !!state.demo,
       newKey: () => randomToken(12), today: D.todayVN(), title: '',
     });
+    // hiển thị giao diện qua src/views.js (dùng được cả trên Cloudflare Workers)
+    res.render = (view, data = {}, cb) => {
+      let html;
+      try { html = views.render(view, { ...app.locals, ...res.locals, ...data }); } catch (e) { if (cb) return cb(e); return next(e); }
+      if (cb) return cb(null, html);
+      res.type('html').send(html);
+    };
     res.page = (view, data = {}) => {
       res.render(view, data, (err, html) => {
         if (err) return next(err);

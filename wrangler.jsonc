@@ -1,0 +1,16 @@
+{
+  // Cấu hình triển khai Eduspace Mini lên Cloudflare Workers
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "eduspace-mini",
+  "main": "cf/worker.js",
+  "compatibility_date": "2025-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // biên dịch giao diện + chép file tĩnh trước mỗi lần dev/deploy
+  "build": { "command": "node scripts/build-cf.js" },
+  "assets": { "directory": "cf/assets" },
+  "rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": true }],
+  "durable_objects": { "bindings": [{ "name": "APP", "class_name": "EduspaceApp" }] },
+  // Durable Object dùng SQLite (có trong gói miễn phí)
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["EduspaceApp"] }],
+  "observability": { "enabled": true }
+}

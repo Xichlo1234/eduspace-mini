@@ -1,18 +1,24 @@
 'use strict';
-const fs = require('fs');
-const path = require('path');
-const Database = require('./sqlite');
-
 const SCHEMA_VERSION = 1;
 
+/** Tạo bảng (nếu chưa có) và nâng cấp. Dùng chung cho Node và Cloudflare. */
+function initDb(db, schemaText) {
+  db.pragma('foreign_keys = ON');
+  db.exec(schemaText);
+  migrate(db);
+  return db;
+}
+
+/** Node.js: mở file SQLite (dùng node:sqlite có sẵn) */
 function openDb(file) {
+  const fs = require('fs');
+  const path = require('path');
+  const Database = require('./sqlite');
   if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true });
   const db = new Database(file);
   if (file !== ':memory:') db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
   db.pragma('busy_timeout = 5000');
-  db.exec(fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8'));
-  migrate(db);
+  initDb(db, fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8'));
   const cur = db.pragma('user_version', { simple: true });
   if (cur < SCHEMA_VERSION) db.pragma(`user_version = ${SCHEMA_VERSION}`);
   db.file = file;
@@ -45,4 +51,4 @@ function nextCode(db, counter, prefix, width = 5) {
   return prefix + String(v).padStart(width, '0');
 }
 
-module.exports = { openDb, nextCode };
+module.exports = { openDb, initDb, nextCode };

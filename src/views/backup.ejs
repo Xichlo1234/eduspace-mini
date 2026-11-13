@@ -1,5 +1,19 @@
 <div class="page-head"><h1>Sao lưu & khôi phục</h1></div>
 <%- include('partials/settings_tabs') %>
+<div class="card stack"><h2>Sao lưu toàn bộ dữ liệu (file JSON)</h2>
+  <p>Tải về một file chứa toàn bộ dữ liệu: học sinh, lớp, điểm danh, học phí, phiếu thu, thu chi, tài khoản. Nên tải <strong>mỗi tuần</strong> và lưu lên Google Drive.</p>
+  <% if (cloudflare) { %><p class="hint">Ứng dụng đang chạy trên Cloudflare: dữ liệu lưu trong Durable Object (Cloudflare tự sao lưu và cho khôi phục trong 30 ngày). File JSON là bản sao do bạn tự giữ.</p><% } %>
+  <div class="actions"><a class="btn primary" href="/settings/backup/export.json">⬇ Tải bản sao lưu (.json)</a></div>
+</div>
+<form method="post" action="/settings/backup/import" enctype="multipart/form-data" class="card stack" data-confirm="Khôi phục sẽ thay TOÀN BỘ dữ liệu hiện tại bằng bản sao lưu. Hãy tải bản sao lưu hiện tại trước. Tiếp tục?">
+  <input type="hidden" name="_csrf" value="<%= csrf %>"><h2>Khôi phục từ file JSON</h2>
+  <p class="hint">Dùng khi chuyển máy/chuyển lên Cloudflare hoặc khôi phục dữ liệu cũ. Toàn bộ dữ liệu hiện tại bị thay thế; mọi người phải đăng nhập lại.</p>
+  <div class="field"><label>File sao lưu (.json)</label><input type="file" name="file" accept=".json,application/json" required></div>
+  <div class="field"><label>Gõ <strong>KHOI PHUC</strong> để xác nhận</label><input name="confirm" required autocomplete="off"></div>
+  <button class="btn danger">Khôi phục</button>
+</form>
+<% if (!cloudflare) { %>
+<h2>Sao lưu file CSDL trên máy chủ</h2>
 <div class="grid g2">
 <div class="card stack"><h2>Sao lưu</h2>
   <p>Toàn bộ dữ liệu nằm trong một file CSDL. Hệ thống tự sao lưu mỗi ngày (giữ 30 bản) vào thư mục <code>backups/</code> cạnh file dữ liệu.</p>
@@ -19,3 +33,5 @@
   <button class="btn danger">Khôi phục</button>
 </form>
 </div>
+
+<% } %>

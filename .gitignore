@@ -3,3 +3,8 @@ data/
 !data/.gitkeep
 *.log
 .env
+cf/assets/
+cf/views.generated.js
+cf/views.generated.cjs
+.wrangler/
+.dev.vars

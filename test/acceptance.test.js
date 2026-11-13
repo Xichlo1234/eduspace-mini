@@ -322,3 +322,18 @@ test('Chính sách vắng theo cấu hình: lớp tháng "vắng có phép khôn
   const nov = B.calcMonthly(db, B.getEnrollment(db, r.enrollment_id), B.getClassRow(db, cid), '2026-11');
   assert.equal(nov.deduction, 0, 'không trừ lặp lại');
 });
+
+test('Sao lưu JSON và khôi phục giữ nguyên dữ liệu (dùng trên Cloudflare)', () => {
+  const ctx = setup(); const { db, owner } = ctx;
+  const backup = require('../src/services/backup');
+  const cid = monthlyClass(ctx);
+  const sid = students.createStudent(db, owner, { full_name: 'HS sao lưu' });
+  const r = E.enroll(db, owner, { student_id: sid, class_id: cid, start_date: '01/09/2026' });
+  B.recordReceipt(db, owner, { invoice_id: r.invoice.id, amount: '300000', method: 'cash', idempotency_key: 'bk' });
+  const data = JSON.parse(JSON.stringify(backup.exportData(db)));
+  const db2 = setup().db;
+  backup.importData(db2, data);
+  for (const t of backup.TABLES) assert.equal(db2.prepare(`SELECT COUNT(*) n FROM ${t}`).get().n, db.prepare(`SELECT COUNT(*) n FROM ${t}`).get().n, t);
+  assert.equal(B.balance(db2, r.invoice.id).due, 500000);
+  assert.throws(() => backup.importData(db2, { app: 'khac' }), /không phải bản sao lưu/);
+});

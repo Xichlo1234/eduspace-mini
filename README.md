@@ -4,7 +4,7 @@
 
 - Giao diện tiếng Việt, dùng tốt trên máy tính và điện thoại.
 - Tiền VND, ngày `dd/mm/yyyy`, múi giờ Việt Nam.
-- Một ứng dụng Node.js + một file CSDL SQLite (dùng `node:sqlite` có sẵn, không cần biên dịch): chi phí thấp, dễ sao lưu, dễ bảo trì.
+- Một ứng dụng Node.js + CSDL SQLite: chạy trên máy (`node:sqlite`) hoặc trên **Cloudflare Workers** (Durable Object SQLite) với cùng một mã nguồn: chi phí thấp, dễ sao lưu, dễ bảo trì.
 
 Phân tích nghiệp vụ, mô hình dữ liệu, chính sách học phí và kết quả kiểm thử: **[docs/PHAN-TICH-NGHIEP-VU.md](docs/PHAN-TICH-NGHIEP-VU.md)**.
 
@@ -47,7 +47,7 @@ Biến môi trường: `PORT` (mặc định 3000), `DATA_FILE` (mặc định `
 
 ### Triển khai
 
-**Đưa lên Internet bằng Cloudflare (khuyên dùng, miễn phí):** xem **[docs/TRIEN-KHAI-CLOUDFLARE.md](docs/TRIEN-KHAI-CLOUDFLARE.md)** – chạy ứng dụng trên máy tại trung tâm bằng `scripts/chay-trung-tam.bat`, rồi dùng Cloudflare Tunnel để có địa chỉ HTTPS dạng `https://quanly.tentrungtam.vn`.
+**Đưa lên Cloudflare (khuyên dùng, miễn phí, không cần máy chủ):** ứng dụng chạy trực tiếp trên Cloudflare Workers + Durable Object SQLite. Làm theo **[docs/TRIEN-KHAI-CLOUDFLARE.md](docs/TRIEN-KHAI-CLOUDFLARE.md)** – chỉ cần bấm chuột trên trang Cloudflare để nhập repo GitHub này.
 
 
 - **Máy tính tại trung tâm / VPS rẻ (1 vCPU, 512MB RAM là đủ):** chạy `npm start` dưới `pm2` hoặc systemd, đặt sau Nginx/Caddy có HTTPS.
@@ -96,7 +96,7 @@ Học sinh, công nợ, phiếu thu, sổ thu chi, báo cáo tổng hợp, tiề
 npm test
 ```
 
-22 kiểm thử (gồm thu cuối kỳ): các tình huống nghiệm thu (học phí theo tỷ lệ, thu nợ, đặt cọc, ngày lễ, chuyển lớp, bảo lưu, dạy thay, phân quyền, chống bấm trùng…) và kiểm thử HTTP duyệt toàn bộ trang với dữ liệu mẫu.
+28 kiểm thử (gồm thu cuối kỳ, sao lưu JSON và chạy lại toàn bộ kiểm thử HTTP với giao diện biên dịch sẵn như trên Cloudflare): các tình huống nghiệm thu (học phí theo tỷ lệ, thu nợ, đặt cọc, ngày lễ, chuyển lớp, bảo lưu, dạy thay, phân quyền, chống bấm trùng…) và kiểm thử HTTP duyệt toàn bộ trang với dữ liệu mẫu.
 
 ## Cấu trúc mã
 

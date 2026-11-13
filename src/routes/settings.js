@@ -29,23 +29,22 @@ const logoUpload = multer({
 r.post('/settings', owner, logoUpload.single('logo'), csrfMultipart, h((req, res) => {
   for (const k of EDITABLE) if (req.body[k] !== undefined) settings.set(req.db, k, String(req.body[k]).slice(0, 4000));
   if (req.file) {
-    const dir = path.join(path.dirname(path.resolve(req.db.file === ':memory:' ? 'data/x' : req.db.file)), 'uploads');
-    fs.mkdirSync(dir, { recursive: true });
-    const ext = { 'image/png': '.png', 'image/jpeg': '.jpg', 'image/webp': '.webp' }[req.file.mimetype];
-    const name = `logo${ext}`;
-    fs.writeFileSync(path.join(dir, name), req.file.buffer);
-    settings.set(req.db, 'logo_path', name);
+    // logo lưu trong CSDL (dùng được cả trên Cloudflare, không cần ổ đĩa)
+    settings.set(req.db, 'logo_data', req.file.buffer.toString('base64'));
+    settings.set(req.db, 'logo_type', req.file.mimetype);
+    settings.set(req.db, 'logo_path', '1');
   }
-  if (req.body.remove_logo === '1') settings.set(req.db, 'logo_path', '');
+  if (req.body.remove_logo === '1') { settings.set(req.db, 'logo_path', ''); settings.set(req.db, 'logo_data', ''); }
   audit.log(req.db, req.user, 'settings.update', 'settings', null);
   req.flash('success', 'Đã lưu cài đặt');
   res.redirect(303, req.body.back || '/settings');
 }));
-// logo được phục vụ từ thư mục dữ liệu
 r.get('/logo', (req, res) => {
-  const name = settings.get(req.db, 'logo_path');
-  if (!name || !/^logo\.(png|jpg|webp)$/.test(name)) return res.status(404).end();
-  res.sendFile(path.join(path.dirname(path.resolve(req.db.file)), 'uploads', name));
+  const data = settings.get(req.db, 'logo_data');
+  if (data) return res.type(settings.get(req.db, 'logo_type') || 'image/png').set('Cache-Control', 'private, max-age=300').send(Buffer.from(data, 'base64'));
+  const name = settings.get(req.db, 'logo_path'); // logo kiểu cũ (file trong data/uploads) trên Node
+  if (!req.db.cloudflare && name && /^logo\.(png|jpg|webp)$/.test(name)) return res.sendFile(path.join(path.dirname(path.resolve(req.db.file)), 'uploads', name));
+  res.status(404).end();
 });
 
 // Danh mục: môn học, phòng học
@@ -82,14 +81,35 @@ r.post('/settings/users/:id/password', need('manageUsers'), h((req, res) => { us
 r.get('/settings/audit', owner, (req, res) => res.page('audit', { title: 'Nhật ký thao tác', list: audit.recent(req.db, 500) }));
 
 // Sao lưu / khôi phục
-r.get('/settings/backup', need('backup'), (req, res) => res.page('backup', { title: 'Sao lưu & khôi phục', list: backup.list(req.db), file: req.db.file }));
-r.post('/settings/backup/now', need('backup'), h(async (req, res) => {
+const nodeOnly = (req, res, next) => (req.db.cloudflare ? next(new AppError('Trên Cloudflare hãy dùng sao lưu dạng file JSON', 400)) : next());
+r.get('/settings/backup', need('backup'), (req, res) => res.page('backup', { title: 'Sao lưu & khôi phục', list: req.db.cloudflare ? [] : backup.list(req.db), file: req.db.file, cloudflare: !!req.db.cloudflare }));
+
+// Sao lưu dạng JSON: dùng được cả trên Node và Cloudflare
+r.get('/settings/backup/export.json', need('backup'), h((req, res) => {
+  const data = backup.exportData(req.db);
+  audit.log(req.db, req.user, 'backup.export', 'backup', null, null, { rows: Object.values(data.tables).reduce((a, t) => a + t.length, 0) });
+  res.attachment(`saoluu-eduspace-${backup.stamp()}.json`).type('json').send(JSON.stringify(data));
+}));
+const jsonUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+r.post('/settings/backup/import', need('backup'), jsonUpload.single('file'), csrfMultipart, h((req, res) => {
+  if (!req.file) throw new AppError('Vui lòng chọn file sao lưu (.json)');
+  if (req.body.confirm !== 'KHOI PHUC') throw new AppError('Vui lòng gõ chính xác KHOI PHUC để xác nhận');
+  let data;
+  try { data = JSON.parse(req.file.buffer.toString('utf8')); } catch (e) { throw new AppError('File không phải bản sao lưu JSON hợp lệ'); }
+  const n = backup.importData(req.db, data);
+  audit.log(req.db, null, 'backup.restore', 'backup', null, `Khôi phục JSON bởi ${req.user.username}`, { rows: n });
+  res.clearCookie('sid');
+  res.redirect(303, '/login');
+}));
+
+// Sao lưu file .db: chỉ khi chạy trên máy (Node)
+r.post('/settings/backup/now', need('backup'), nodeOnly, h(async (req, res) => {
   const f = await backup.backupTo(req.db, path.join(backup.backupDir(req.db.file), `manual-${backup.stamp()}.db`));
   audit.log(req.db, req.user, 'backup.create', 'backup', null, null, { file: path.basename(f) });
   req.flash('success', `Đã tạo bản sao lưu ${path.basename(f)}`);
   res.redirect(303, '/settings/backup');
 }));
-r.get('/settings/backup/download/:name', need('backup'), h(async (req, res) => {
+r.get('/settings/backup/download/:name', need('backup'), nodeOnly, h(async (req, res) => {
   const name = req.params.name;
   if (name === 'current') {
     const tmp = path.join(backup.backupDir(req.db.file), `download-${backup.stamp()}.db`);
@@ -101,18 +121,20 @@ r.get('/settings/backup/download/:name', need('backup'), h(async (req, res) => {
   if (!fs.existsSync(f)) throw new AppError('Không tìm thấy file', 404);
   res.download(f);
 }));
-const restoreUpload = multer({ dest: path.join(require('os').tmpdir(), 'edu-restore'), limits: { fileSize: 500 * 1024 * 1024 } });
-r.post('/settings/backup/restore', need('backup'), restoreUpload.single('file'), csrfMultipart, h(async (req, res) => {
+const restoreUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 200 * 1024 * 1024 } });
+r.post('/settings/backup/restore', need('backup'), nodeOnly, restoreUpload.single('file'), csrfMultipart, h(async (req, res) => {
   if (!req.file) throw new AppError('Vui lòng chọn file sao lưu (.db)');
-  if (req.body.confirm !== 'KHOI PHUC') { fs.unlink(req.file.path, () => {}); throw new AppError('Vui lòng gõ chính xác KHOI PHUC để xác nhận'); }
-  const err = backup.validateFile(req.file.path);
-  if (err) { fs.unlink(req.file.path, () => {}); throw new AppError(err); }
+  if (req.body.confirm !== 'KHOI PHUC') throw new AppError('Vui lòng gõ chính xác KHOI PHUC để xác nhận');
+  const tmpFile = path.join(require('os').tmpdir(), `edu-restore-${backup.stamp()}.db`);
+  fs.writeFileSync(tmpFile, req.file.buffer);
+  const err = backup.validateFile(tmpFile);
+  if (err) { fs.unlink(tmpFile, () => {}); throw new AppError(err); }
   const state = req.state; const file = state.db.file;
   await backup.backupTo(state.db, path.join(backup.backupDir(file), `before-restore-${backup.stamp()}.db`));
   state.db.close();
   for (const ext of ['-wal', '-shm']) if (fs.existsSync(file + ext)) fs.unlinkSync(file + ext);
-  fs.copyFileSync(req.file.path, file);
-  fs.unlink(req.file.path, () => {});
+  fs.copyFileSync(tmpFile, file);
+  fs.unlink(tmpFile, () => {});
   state.db = openDb(file);
   audit.log(state.db, null, 'backup.restore', 'backup', null, `Khôi phục bởi ${req.user.username}`);
   res.clearCookie('sid');

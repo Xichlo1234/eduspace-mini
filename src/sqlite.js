@@ -11,7 +11,7 @@ process.emitWarning = function (warning, ...args) {
   if (msg && /SQLite is an experimental feature/i.test(msg)) return;
   return origEmit.call(process, warning, ...args);
 };
-const sqlite = require('node:sqlite');
+const sqlite = require(['node', 'sqlite'].join(':')); // chỉ dùng trên Node (Cloudflare dùng src/sqlite-do.js)
 process.emitWarning = origEmit;
 
 class Database {

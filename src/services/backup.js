@@ -7,7 +7,6 @@
  */
 const fs = require('fs');
 const path = require('path');
-const Database = require('../sqlite');
 
 function backupDir(dbFile) { return path.join(path.dirname(path.resolve(dbFile)), 'backups'); }
 function stamp() { return new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19); }
@@ -40,6 +39,7 @@ function list(db) {
 function validateFile(file) {
   let x;
   try {
+    const Database = require('../sqlite');
     x = new Database(file, { readonly: true });
     const tables = new Set(x.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((r) => r.name));
     for (const t of ['users', 'students', 'classes', 'invoices', 'receipts']) if (!tables.has(t)) return `File không phải bản sao lưu hợp lệ (thiếu bảng ${t})`;
@@ -52,4 +52,38 @@ function validateFile(file) {
   } finally { if (x) x.close(); }
 }
 
-module.exports = { backupDir, backupTo, autoBackup, list, validateFile, stamp };
+// ---- Sao lưu JSON (dùng được trên Cloudflare): toàn bộ bảng dữ liệu
+// thứ tự cha → con để khôi phục không vi phạm khóa ngoại
+const TABLES = ['settings', 'counters', 'subjects', 'rooms', 'teachers', 'users', 'holidays', 'classes', 'class_schedules', 'class_sessions',
+  'students', 'enrollments', 'enrollment_events', 'reservations', 'attendance', 'invoices', 'invoice_adjustments', 'receipts',
+  'credit_entries', 'allocations', 'cash_transactions', 'contact_logs', 'audit_logs'];
+
+function exportData(db) {
+  const tables = {};
+  for (const t of TABLES) tables[t] = db.prepare(`SELECT * FROM ${t}`).all().map((r) => ({ ...r }));
+  return { app: 'eduspace-mini', format: 1, exported_at: new Date().toISOString(), tables };
+}
+
+function importData(db, data) {
+  if (!data || data.app !== 'eduspace-mini' || !data.tables) throw Object.assign(new Error('File không phải bản sao lưu của Eduspace Mini'), { status: 400 });
+  const users = data.tables.users || [];
+  if (!users.some((u) => u.role === 'owner')) throw Object.assign(new Error('Bản sao lưu không có tài khoản chủ trung tâm'), { status: 400 });
+  let n = 0;
+  db.transaction(() => {
+    db.prepare('DELETE FROM auth_sessions').run();
+    db.prepare('DELETE FROM import_batches').run();
+    for (const t of [...TABLES].reverse()) db.prepare(`DELETE FROM ${t}`).run();
+    for (const t of TABLES) {
+      const cols = new Set(db.prepare(`PRAGMA table_info(${t})`).all().map((c) => c.name));
+      for (const row of data.tables[t] || []) {
+        const keys = Object.keys(row).filter((k) => !cols.size || cols.has(k));
+        if (!keys.length) continue;
+        db.prepare(`INSERT INTO ${t} (${keys.join(',')}) VALUES (${keys.map(() => '?').join(',')})`).run(...keys.map((k) => row[k]));
+        n++;
+      }
+    }
+  })();
+  return n;
+}
+
+module.exports = { exportData, importData, TABLES, backupDir, backupTo, autoBackup, list, validateFile, stamp };

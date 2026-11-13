@@ -1,90 +1,78 @@
-# Đưa Eduspace Mini lên Internet bằng Cloudflare Tunnel
+# Đưa Eduspace Mini lên Cloudflare
 
-## Vì sao dùng Cloudflare Tunnel (không dùng Cloudflare Pages/Workers)
-
-Eduspace Mini là một server Node.js lưu toàn bộ dữ liệu trong **một file SQLite trên ổ đĩa** (`data/app.db`).
-Cloudflare Pages/Workers không có ổ đĩa lâu dài, nên không chạy được kiểu ứng dụng này nếu không viết lại phần dữ liệu.
-
-**Cloudflare Tunnel** giải quyết đúng nhu cầu:
+Ứng dụng chạy **trực tiếp trên Cloudflare Workers**, không cần máy tính bật tại trung tâm, không cần VPS.
 
 ```
-Điện thoại / máy tính ở bất kỳ đâu
-        │  https://quanly.tentrungtam.vn   (HTTPS, chứng chỉ do Cloudflare cấp)
+Trình duyệt (máy tính, điện thoại)
+        │ https://eduspace-mini.<ten-ban>.workers.dev  (hoặc tên miền riêng)
         ▼
-   Cloudflare  ◄──── đường hầm mã hóa (cloudflared tự kết nối ra ngoài) ────┐
-                                                                           │
-                         Máy tính đặt tại trung tâm (hoặc VPS)             │
-                         ├─ Eduspace Mini  http://localhost:3000  ◄─────────┘
-                         └─ data/app.db  (dữ liệu của bạn, nằm trên máy bạn)
+Cloudflare Worker ──► Durable Object "main"
+                       ├─ ứng dụng Eduspace Mini (Express)
+                       └─ CSDL SQLite của Cloudflare (lưu lâu dài, Cloudflare tự sao lưu 30 ngày)
+File tĩnh (CSS, JS) do Cloudflare phục vụ trực tiếp.
 ```
 
-- Miễn phí; không cần IP tĩnh, không cần mở cổng modem.
-- Dữ liệu vẫn nằm trên máy của trung tâm, sao lưu như hướng dẫn trong README.
-- Máy chạy ứng dụng phải **bật và có mạng** thì mọi người mới truy cập được (nếu muốn chạy 24/7 không phụ thuộc máy tại trung tâm, dùng một VPS ~100–150 nghìn/tháng và làm y hệt các bước dưới).
+**Chi phí:** gói **Workers Free** là đủ cho trung tâm dưới 200 học sinh (100.000 lượt truy cập/ngày, Durable Object SQLite có trong gói miễn phí, dung lượng 5GB).
 
-## Bước 0 – Chạy ứng dụng với dữ liệu thật
+## Cách 1 – Bấm chuột trên trang Cloudflare (khuyên dùng)
 
-Trên máy sẽ làm “máy chủ” (Windows):
+Cloudflare tự lấy mã từ GitHub, tự build và tự cập nhật mỗi khi repo có bản mới.
 
-1. Cài Node.js bản LTS (https://nodejs.org) nếu chưa có.
-2. Giải nén mã nguồn vào một thư mục cố định, ví dụ `C:\eduspace-mini` (không để trên Desktop/Downloads để tránh xóa nhầm).
-3. Bấm đúp `scripts\chay-trung-tam.bat`. Lần đầu sẽ tự cài thư viện. Khi thấy `Eduspace Mini đang chạy: http://localhost:3000` là xong.
-4. Mở http://localhost:3000 → tạo tài khoản chủ trung tâm (mật khẩu mạnh, vì sắp đưa lên Internet).
+1. Đăng nhập https://dash.cloudflare.com → menu trái **Compute (Workers) → Workers & Pages** → nút **Create**.
+2. Chọn tab **Workers** → **Import a repository** (Nhập từ Git).
+3. Bấm **Connect GitHub** (nếu được hỏi) → cho phép ứng dụng Cloudflare truy cập repo **`Xichlo1234/eduspace-mini`** (chọn *Only select repositories* → chọn repo này).
+4. Chọn repo `eduspace-mini` → màn hình cấu hình:
+   - **Project name:** `eduspace-mini` (phải trùng tên trong `wrangler.jsonc`)
+   - **Build command:** để trống
+   - **Deploy command:** `npx wrangler deploy` (mặc định)
+   - Bấm **Create and deploy**.
+5. Chờ 1–3 phút. Khi báo **Success**, bấm vào địa chỉ dạng `https://eduspace-mini.<ten-ban>.workers.dev`.
+6. **Mở ngay và tạo tài khoản chủ trung tâm** (trang “Chào mừng!”). Lần đầu ai mở trang này trước sẽ tạo được tài khoản chủ, nên hãy làm ngay sau khi triển khai.
 
-> Dữ liệu mẫu (`npm run demo`, cổng 3001) chỉ để thử, **không** đưa dữ liệu mẫu lên Internet.
+Từ đó, mỗi lần có bản cập nhật trên GitHub (nhánh `main`), Cloudflare tự triển khai lại; **dữ liệu giữ nguyên**.
 
-## Bước 1 – Thử nhanh (không cần tài khoản, không cần tên miền)
+## Cách 2 – Dùng dòng lệnh (trên máy đã cài Node.js)
 
-1. Tải `cloudflared` cho Windows: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/ (file `cloudflared-windows-amd64.msi`), cài đặt.
-2. Giữ ứng dụng đang chạy (bước 0), bấm đúp `scripts\thu-nghiem-cloudflare.bat`.
-3. Trong cửa sổ hiện ra dòng `https://xxxx-xxxx.trycloudflare.com` → mở địa chỉ đó trên điện thoại (dùng 4G để chắc chắn đi qua Internet).
-
-Địa chỉ này **tạm thời**, đổi mỗi lần chạy – chỉ để kiểm tra. Dùng lâu dài làm Bước 2.
-
-## Bước 2 – Tên miền cố định (dùng lâu dài)
-
-Cần: tài khoản Cloudflare (miễn phí) và **một tên miền** đã trỏ nameserver về Cloudflare
-(mua tên miền `.vn`/`.com` ở nhà cung cấp bất kỳ, rồi trong Cloudflare chọn *Add a domain* và làm theo hướng dẫn đổi nameserver).
-
-1. Vào https://one.dash.cloudflare.com → **Networks → Tunnels → Create a tunnel** → chọn **Cloudflared** → đặt tên, ví dụ `eduspace`.
-2. Ở bước *Install connector*, chọn **Windows**, sao chép lệnh dạng
-   `cloudflared.exe service install eyJhIjoi...` → mở **Command Prompt bằng quyền Administrator** → dán và chạy.
-   Lệnh này cài cloudflared thành dịch vụ Windows, tự chạy khi bật máy.
-3. Bấm **Next** → *Public hostname*:
-   - Subdomain: `quanly` · Domain: `tentrungtam.vn`
-   - Service: **Type** `HTTP` · **URL** `localhost:3000`
-4. **Save tunnel**. Sau ~1 phút mở `https://quanly.tentrungtam.vn` là dùng được.
-
-Ứng dụng đã được cấu hình sẵn để chạy sau Cloudflare: nhận đúng HTTPS, cookie đăng nhập đặt chế độ `Secure`, chống dò mật khẩu theo IP thật của người dùng.
-
-## Bước 3 – Cho ứng dụng tự chạy khi bật máy
-
-cloudflared đã tự chạy (dịch vụ Windows). Với ứng dụng:
-
-1. Nhấn `Win + R`, gõ `shell:startup`, Enter.
-2. Tạo **shortcut** tới `C:\eduspace-mini\scripts\chay-trung-tam.bat` trong thư mục vừa mở.
-3. Trong Windows: *Settings → System → Power* đặt **Sleep: Never** khi cắm điện (máy ngủ thì không truy cập được).
-
-## Bước 4 (khuyên dùng) – Thêm lớp bảo vệ Cloudflare Access
-
-Ứng dụng đã có đăng nhập riêng, nhưng có thể bật thêm Cloudflare Access để chỉ email được phép mới thấy trang đăng nhập:
-
-1. Zero Trust → **Access → Applications → Add an application → Self-hosted**.
-2. Domain: `quanly.tentrungtam.vn`.
-3. Policy: *Allow* · *Emails* = email của chủ, nhân viên, giáo viên. Phương thức đăng nhập: *One-time PIN* (mã gửi qua email).
-4. Miễn phí cho tối đa 50 người dùng.
-
-## Vận hành an toàn
-
-- **Sao lưu**: Cài đặt → Sao lưu → tải bản sao lưu về máy khác/Google Drive **mỗi tuần** (máy chủ hỏng ổ cứng là mất dữ liệu nếu không có bản sao).
-- **Cập nhật phiên bản mới**: tắt cửa sổ `chay-trung-tam.bat` → sao lưu → giải nén mã mới đè lên (giữ nguyên thư mục `data`) → chạy lại `chay-trung-tam.bat`. Ứng dụng tự nâng cấp CSDL.
-- **Không** chép/xóa thư mục `data` khi ứng dụng đang chạy.
-- Quên mật khẩu chủ: xem README → “Khôi phục mật khẩu chủ”.
-
-## Nếu muốn chạy trên VPS Linux thay cho máy tại trung tâm
+Trong thư mục mã nguồn:
 
 ```bash
-git clone https://github.com/Xichlo1234/eduspace-mini && cd eduspace-mini && npm install --omit=dev
+npm install
+```
+```bash
+npx wrangler login
+```
+```bash
+npx wrangler deploy
 ```
 
-Chạy nền bằng systemd hoặc `docker run` (xem README), rồi làm Bước 2 với lệnh cài connector dành cho Linux mà Cloudflare hiển thị. Service URL vẫn là `localhost:3000`.
+Lệnh cuối in ra địa chỉ `https://eduspace-mini.<ten-ban>.workers.dev`.
+
+## Sau khi triển khai
+
+- **Tên miền riêng (tuỳ chọn):** Worker `eduspace-mini` → **Settings → Domains & Routes → Add → Custom domain** → nhập ví dụ `quanly.tentrungtam.vn` (tên miền phải đang dùng Cloudflare DNS).
+- **Thêm lớp bảo vệ (khuyên dùng):** Zero Trust → **Access → Applications → Add → Self-hosted**, nhập địa chỉ trên, chính sách *Allow* theo email của chủ, nhân viên, giáo viên (đăng nhập bằng mã gửi qua email; miễn phí đến 50 người).
+- **Chuyển dữ liệu đang dùng trên máy lên Cloudflare:** trên bản đang chạy ở máy → *Cài đặt → Sao lưu → Tải bản sao lưu (.json)*; trên bản Cloudflare → tạo tài khoản chủ tạm → *Cài đặt → Sao lưu → Khôi phục từ file JSON* → đăng nhập lại bằng tài khoản cũ.
+- **Sao lưu:** Cloudflare tự lưu lịch sử 30 ngày cho Durable Object. Ngoài ra nên vào *Cài đặt → Sao lưu → Tải bản sao lưu (.json)* **mỗi tuần** và cất lên Google Drive.
+- **Xem lỗi khi cần:** Worker → **Observability / Logs**.
+
+## Khác biệt nhỏ khi chạy trên Cloudflare
+
+| Chức năng | Trên máy (Node) | Trên Cloudflare |
+|---|---|---|
+| Sao lưu | File `.db` + file JSON, tự sao lưu hằng ngày vào ổ đĩa | File JSON (tải về) + Cloudflare tự lưu 30 ngày |
+| Logo | Lưu trong CSDL | Lưu trong CSDL |
+| Mọi chức năng nghiệp vụ | Đầy đủ | Đầy đủ (cùng một mã nguồn) |
+
+## Kiểm tra bản mới triển khai (tuỳ chọn, cho người kỹ thuật)
+
+Trên một bản **mới, CSDL còn trống** (ví dụ chạy thử `npx wrangler dev`):
+
+```bash
+node scripts/smoke.js http://127.0.0.1:8787
+```
+
+Script chạy toàn bộ quy trình (tạo lớp, học sinh, đặt cọc, xếp lớp, điểm danh, lập học phí cuối kỳ, thu tiền, in phiếu, Excel, logo, sao lưu/khôi phục) và duyệt mọi trang. Không chạy script này vào hệ thống đang có dữ liệu thật.
+
+## Phương án khác: chạy trên máy tại trung tâm + Cloudflare Tunnel
+
+Nếu muốn dữ liệu nằm trên máy của trung tâm: chạy `scripts\chay-trung-tam.bat`, cài `cloudflared`, tạo Tunnel trong Zero Trust → *Networks → Tunnels*, trỏ Public hostname tới `http://localhost:3000`. Máy phải luôn bật.
