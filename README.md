@@ -47,6 +47,9 @@ Biến môi trường: `PORT` (mặc định 3000), `DATA_FILE` (mặc định `
 
 ### Triển khai
 
+**Đưa lên Internet bằng Cloudflare (khuyên dùng, miễn phí):** xem **[docs/TRIEN-KHAI-CLOUDFLARE.md](docs/TRIEN-KHAI-CLOUDFLARE.md)** – chạy ứng dụng trên máy tại trung tâm bằng `scripts/chay-trung-tam.bat`, rồi dùng Cloudflare Tunnel để có địa chỉ HTTPS dạng `https://quanly.tentrungtam.vn`.
+
+
 - **Máy tính tại trung tâm / VPS rẻ (1 vCPU, 512MB RAM là đủ):** chạy `npm start` dưới `pm2` hoặc systemd, đặt sau Nginx/Caddy có HTTPS.
 - **Docker:**
 
