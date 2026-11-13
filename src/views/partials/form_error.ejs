@@ -1,0 +1,11 @@
+<% if (typeof error !== 'undefined' && error) { %>
+<div class="alert error"><%= error %>
+  <% if (typeof conflicts !== 'undefined' && conflicts && conflicts.length) { %>
+  <ul class="small" style="margin:.5rem 0 0">
+    <% for (const c of conflicts.slice(0, 12)) { %><li><%= dmy(c.date) %> <%= c.start_time %>–<%= c.end_time %>: trùng <strong><%= c.by %></strong> với lớp <%= c.other_class || (c.other && c.other.class_name) %> (<%= c.other_start || (c.other && c.other.start_time) %>–<%= c.other_end || (c.other && c.other.end_time) %>)</li><% } %>
+    <% if (conflicts.length > 12) { %><li>… và <%= conflicts.length - 12 %> buổi khác</li><% } %>
+  </ul>
+  <label class="check" style="margin-top:8px"><input type="checkbox" name="force" value="1" form="main-form"> Tôi đã kiểm tra, vẫn lưu dù trùng lịch</label>
+  <% } %>
+</div>
+<% } %>

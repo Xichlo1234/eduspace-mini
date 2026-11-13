@@ -1,0 +1,51 @@
+<div class="page-head"><h1><%= title %></h1></div>
+<%- include('partials/form_error') %>
+<form method="post" action="<%= typeof editing !== 'undefined' && editing ? '/classes/' + c.id : '/classes' %>" class="stack" id="main-form"><%- include('partials/csrf') %>
+<div class="card stack"><h2>Thông tin lớp</h2>
+  <div class="row">
+    <div class="field" style="flex:2 1 260px"><label>Tên lớp *</label><input name="name" required value="<%= c.name || '' %>" placeholder="VD: Tiếng Anh lớp 6 – tối 2-4-6"></div>
+    <div class="field"><label>Môn học / chương trình</label><select name="subject_id"><option value="">—</option><% for (const s of subjects) { %><option value="<%= s.id %>" <%= String(c.subject_id) === String(s.id) ? 'selected' : '' %>><%= s.name %></option><% } %></select>
+      <span class="hint"><a href="/settings/catalog">+ thêm môn</a></span></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Giáo viên phụ trách</label><select name="teacher_id"><option value="">—</option><% for (const t of teachers) { %><option value="<%= t.id %>" <%= String(c.teacher_id) === String(t.id) ? 'selected' : '' %>><%= t.full_name %></option><% } %></select>
+      <span class="hint"><a href="/teachers/new">+ thêm giáo viên</a></span></div>
+    <div class="field"><label>Phòng học</label><select name="room_id"><option value="">—</option><% for (const r of rooms) { %><option value="<%= r.id %>" <%= String(c.room_id) === String(r.id) ? 'selected' : '' %>><%= r.name %></option><% } %></select></div>
+    <div class="field"><label>Sĩ số tối đa</label><input type="number" name="max_students" min="1" value="<%= c.max_students || '' %>"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Ngày bắt đầu *</label><input name="start_date" required value="<%= c.start_date || '' %>" placeholder="dd/mm/yyyy"></div>
+    <div class="field"><label>Ngày kết thúc (nếu có)</label><input name="end_date" value="<%= c.end_date || '' %>" placeholder="dd/mm/yyyy"></div>
+    <% if (typeof editing !== 'undefined' && editing) { %><div class="field"><label>Đổi GV/phòng áp dụng từ ngày</label><input name="apply_from" value="<%= dmy(today) %>"><span class="hint">Chỉ đổi các buổi chưa dạy từ ngày này.</span></div><% } %>
+  </div>
+</div>
+<% if (!(typeof editing !== 'undefined' && editing)) { %>
+<div class="card stack"><h2>Lịch học trong tuần</h2>
+  <%- include('partials/slots', { slots }) %>
+  <p class="hint">Hệ thống tự tạo các buổi học theo lịch, bỏ qua ngày nghỉ đã khai báo. Lớp theo khóa luôn đủ số buổi.</p>
+</div>
+<% } %>
+<div class="card stack"><h2>Học phí</h2>
+  <% if (typeof hasInvoices !== 'undefined' && hasInvoices) { %><div class="alert info">Lớp đã phát sinh học phí: không đổi được hình thức thu. Mức phí mới chỉ áp dụng cho khoản phải thu tạo sau.</div><% } %>
+  <div class="row">
+    <div class="field"><label>Hình thức học phí *</label><select name="fee_type" id="fee_type" <%= typeof hasInvoices !== 'undefined' && hasInvoices ? 'disabled' : '' %>>
+      <% for (const [k, v] of Object.entries(FEE_TYPES)) { %><option value="<%= k %>" <%= c.fee_type === k ? 'selected' : '' %>><%= v %></option><% } %></select>
+      <% if (typeof hasInvoices !== 'undefined' && hasInvoices) { %><input type="hidden" name="fee_type" value="<%= c.fee_type %>"><% } %></div>
+    <div class="field"><label><span data-fee="monthly">Học phí mỗi tháng</span><span data-fee="course">Học phí cả khóa</span><span data-fee="package">Đơn giá mỗi buổi</span> (đ)</label><input name="fee_amount" data-money required value="<%= c.fee_amount != null && c.fee_amount !== '' ? M.num(M.parseMoney(c.fee_amount)) : '' %>"></div>
+    <div class="field" data-fee="course"><label>Tổng số buổi của khóa *</label><input type="number" name="total_sessions" min="1" value="<%= c.total_sessions || '' %>"></div>
+    <div class="field" data-fee="package"><label>Số buổi mỗi gói *</label><input type="number" name="package_sessions" min="1" value="<%= c.package_sessions || '' %>"></div>
+  </div>
+  <div class="calc" data-fee="monthly"><strong>Cách tính theo tháng:</strong> học đủ tháng thu đúng mức phí tháng. Buổi trung tâm hủy/nghỉ lễ không tính.
+    <label class="check" style="margin-top:6px"><input type="checkbox" name="prorate_first_month" value="1" <%= String(c.prorate_first_month) !== '0' ? 'checked' : '' %>> Nhập học/nghỉ giữa tháng: tính theo tỷ lệ = phí tháng × số buổi thuộc thời gian đăng ký ÷ tổng số buổi hợp lệ của tháng (VD 800.000 × 4/8 = 400.000)</label></div>
+  <div class="calc" data-fee="course"><strong>Cách tính theo khóa:</strong> học phí gắn với tổng số buổi. Nhập học muộn: phí khóa × số buổi còn lại ÷ tổng số buổi. Nghỉ lễ/hủy buổi được bù cuối khóa.</div>
+  <div class="calc" data-fee="package"><strong>Cách tính theo gói:</strong> mỗi lần thu một gói = số buổi mỗi gói × đơn giá. Theo dõi số buổi đã mua, đã dùng, còn lại. Buổi trung tâm hủy không trừ buổi.</div>
+  <fieldset><legend>Chính sách khi học sinh vắng (cấu hình rõ, hệ thống không tự suy đoán)</legend>
+    <label class="check"><input type="checkbox" name="excused_absence_charged" value="1" <%= String(c.excused_absence_charged) !== '0' ? 'checked' : '' %>> Vắng <strong>có phép</strong> vẫn tính phí / trừ buổi</label>
+    <label class="check"><input type="checkbox" name="unexcused_absence_charged" value="1" <%= String(c.unexcused_absence_charged) !== '0' ? 'checked' : '' %>> Vắng <strong>không phép</strong> vẫn tính phí / trừ buổi</label>
+    <p class="hint">Bỏ chọn = không tính phí buổi vắng đó. Lớp tháng: giá trị buổi vắng được trừ vào học phí tháng sau. Lớp gói: không trừ buổi. Khi chuyển lớp/bảo lưu, buổi vắng không tính phí được coi là chưa sử dụng.</p>
+  </fieldset>
+  <div class="row"><div class="field"><label>Đơn giá tiền dạy/buổi riêng của lớp (để trống = theo đơn giá giáo viên)</label><input name="teacher_rate" data-money value="<%= c.teacher_rate != null && c.teacher_rate !== '' ? M.num(M.parseMoney(c.teacher_rate)) : '' %>"></div></div>
+  <div class="field"><label>Ghi chú</label><textarea name="note"><%= c.note || '' %></textarea></div>
+</div>
+<div class="actions"><button class="btn primary"><%= typeof editing !== 'undefined' && editing ? 'Lưu thay đổi' : 'Tạo lớp & sinh lịch học' %></button><a class="btn" href="/classes">Hủy</a></div>
+</form>

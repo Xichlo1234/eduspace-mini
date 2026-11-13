@@ -1,0 +1,39 @@
+<div class="page-head"><div><h1>Khoản phải thu <%= inv.code %> <% if (inv.status === 'void') { %><span class="badge">ĐÃ HỦY</span><% } %></h1>
+  <div class="muted"><a href="/students/<%= inv.student_id %>"><%= inv.student_name %></a> · <%= inv.class_name || '' %> · <%= inv.period_label || inv.description %></div></div>
+  <div class="actions"><% if (inv.status === 'active' && inv.due > 0) { %><a class="btn primary" href="/payments/new?invoice_id=<%= inv.id %>">Thu tiền</a><a class="btn" href="/messages/compose?type=fee&student_id=<%= inv.student_id %>&invoice_id=<%= inv.id %>">Nhắc phí</a><% } %></div></div>
+<% if (inv.status === 'void') { %><div class="alert warn">Đã hủy: <%= inv.void_reason %></div><% } %>
+<div class="grid g4 stats" style="margin-bottom:16px">
+  <div class="stat"><div class="label">Theo cách tính</div><div class="value"><%= vnd(inv.base_amount) %></div></div>
+  <div class="stat"><div class="label">Phải thu</div><div class="value"><%= vnd(inv.amount) %></div></div>
+  <div class="stat ok"><div class="label">Đã thanh toán</div><div class="value"><%= vnd(inv.paid) %></div></div>
+  <div class="stat <%= inv.due > 0 ? 'bad' : 'ok' %>"><div class="label">Còn nợ · hạn <%= dmy(inv.due_date) %></div><div class="value"><%= vnd(inv.due) %></div></div>
+</div>
+<div class="grid g2">
+<div class="card"><h2>Diễn giải cách tính</h2>
+  <% if (inv.detail.lines) { %><ul><% for (const l of inv.detail.lines) { %><li><%= l %></li><% } %></ul><% } else { %><p><%= inv.description %></p><% } %>
+  <% if (inv.sessions_count) { %><p class="small muted">Số buổi tính phí: <%= inv.sessions_count %></p><% } %>
+  <h3>Lịch sử miễn giảm / điều chỉnh</h3>
+  <ul class="list-plain small"><% for (const a of inv.adjustments) { %><li><span><%= D.displayDateTime(a.created_at) %> · <%= a.user_name %> · <%= a.reason %></span><strong><%= vnd(a.old_amount) %> → <%= vnd(a.new_amount) %></strong></li><% } %>
+  <% if (!inv.adjustments.length) { %><li class="muted">Không có.</li><% } %></ul>
+</div>
+<div class="card"><h2>Thanh toán</h2>
+  <ul class="list-plain small"><% for (const a of inv.allocations) { %><li class="<%= a.status === 'void' ? 'muted' : '' %>"><span><%= D.displayDateTime(a.created_at) %> · <%= a.source === 'receipt' ? 'Phiếu ' : 'Tiền trả trước' %><% if (a.receipt_code) { %><a href="/receipts/<%= a.receipt_id %>"><%= a.receipt_code %></a> (<%= a.method === 'cash' ? 'tiền mặt' : 'CK' %>)<% } %><%= a.amount < 0 ? ' – rút phần đã đóng dư ra tiền trả trước' : '' %><%= a.status === 'void' ? ' – đã hủy' : '' %></span><strong class="num"><%= vnd(a.amount) %></strong></li><% } %>
+  <% if (!inv.allocations.length) { %><li class="muted">Chưa thanh toán.</li><% } %></ul>
+  <% if (inv.status === 'active' && inv.due > 0 && credit.free > 0) { %>
+  <form method="post" action="/invoices/<%= inv.id %>/apply-credit" class="row" style="margin-top:10px"><%- include('partials/csrf') %>
+    <div class="field"><label>Trừ tiền trả trước (đang có <%= vnd(credit.free) %>)</label><input name="amount" data-money value="<%= M.num(Math.min(credit.free, inv.due)) %>"></div><button class="btn">Trừ vào khoản này</button></form>
+  <% } %>
+</div>
+</div>
+<% if (inv.status === 'active' && can.adjustMoney) { %>
+<div class="grid g2">
+  <form method="post" action="/invoices/<%= inv.id %>/adjust" class="card stack"><%- include('partials/csrf') %><h2>Miễn giảm / điều chỉnh</h2>
+    <div class="row"><div class="field"><label>Số phải thu mới</label><input name="new_amount" data-money value="<%= M.num(inv.amount) %>"></div>
+    <div class="field" style="flex:2 1 220px"><label>Lý do *</label><input name="reason" required></div></div>
+    <p class="hint">Lưu lịch sử người sửa, thời điểm, lý do. Nếu số mới nhỏ hơn số đã đóng, phần dư chuyển vào tiền trả trước.</p><button class="btn">Lưu điều chỉnh</button></form>
+  <% if (inv.paid === 0) { %>
+  <form method="post" action="/invoices/<%= inv.id %>/void" class="card stack" data-confirm="Hủy khoản phải thu này?"><%- include('partials/csrf') %><h2>Hủy khoản phải thu</h2>
+    <div class="field"><label>Lý do *</label><input name="reason" required></div><button class="btn danger">Hủy khoản</button></form>
+  <% } %>
+</div>
+<% } %>

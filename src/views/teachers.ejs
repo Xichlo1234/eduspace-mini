@@ -1,0 +1,5 @@
+<div class="page-head"><div><h1>Giáo viên</h1></div><div class="actions"><% if (can.manageClasses) { %><a class="btn primary" href="/teachers/new">+ Thêm giáo viên</a><% } %><% if (can.viewReports) { %><a class="btn" href="/teachers/pay">Tiền dạy theo tháng</a><% } %></div></div>
+<div class="card table-wrap"><table class="responsive"><thead><tr><th>Giáo viên</th><th>Liên hệ</th><% if (can.viewReports) { %><th class="num">Đơn giá/buổi</th><% } %><th>Lớp phụ trách</th></tr></thead><tbody>
+<% for (const t of list) { %><tr class="<%= t.active ? '' : 'void' %>"><td data-l="GV"><a href="/teachers/<%= t.id %>"><strong><%= t.full_name %></strong></a></td><td data-l="Liên hệ"><%= t.phone %> <%= t.email %></td>
+  <% if (can.viewReports) { %><td class="num" data-l="Đơn giá"><%= vnd(t.default_rate) %></td><% } %><td data-l="Lớp" class="small"><%= t.classes.map((c) => c.name).join(', ') || '—' %></td></tr><% } %>
+<% if (!list.length) { %><tr><td colspan="4" class="muted">Chưa có giáo viên. Nếu bạn tự dạy, hãy thêm chính mình.</td></tr><% } %></tbody></table></div>

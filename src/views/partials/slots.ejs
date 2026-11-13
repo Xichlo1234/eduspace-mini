@@ -1,0 +1,15 @@
+<div id="slots">
+<% (slots && slots.length ? slots : [{}]).forEach(function (s, i) { %>
+  <div class="row slot-row" style="margin-bottom:8px">
+    <div class="field" style="flex:1 1 140px"><label>Thứ</label>
+      <select name="slots[<%= i %>][weekday]">
+        <option value="">– chọn –</option>
+        <% for (const [k, v] of Object.entries(D.WEEKDAY_NAMES)) { %><option value="<%= k %>" <%= String(s.weekday) === k ? 'selected' : '' %>><%= v %></option><% } %>
+      </select></div>
+    <div class="field" style="flex:1 1 110px"><label>Bắt đầu</label><input type="time" name="slots[<%= i %>][start_time]" value="<%= s.start_time || '18:00' %>"></div>
+    <div class="field" style="flex:1 1 110px"><label>Kết thúc</label><input type="time" name="slots[<%= i %>][end_time]" value="<%= s.end_time || '19:30' %>"></div>
+    <button type="button" class="btn sm rm-slot" title="Bỏ dòng này">✕</button>
+  </div>
+<% }) %>
+</div>
+<button type="button" class="btn sm" id="add-slot">+ Thêm buổi trong tuần</button>

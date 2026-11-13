@@ -1,0 +1,90 @@
+<div class="page-head">
+  <div><h1>Hôm nay, <%= D.WEEKDAY_NAMES[D.weekday(d.today)] %> <%= dmy(d.today) %></h1><div class="muted">Xin chào <%= user.full_name %></div></div>
+  <% if (!isTeacher) { %><div class="actions">
+    <a class="btn primary" href="/students/new">+ Học sinh</a><a class="btn" href="/finance">Thu tiền</a><a class="btn" href="/schedule">Lịch tuần</a>
+  </div><% } %>
+</div>
+
+<% if (d.setup && !d.setup.done) { %>
+<div class="card"><h2>Bắt đầu nhanh – tạo lớp đầu tiên trong vài phút</h2>
+<ol class="steps">
+<% for (const s of d.setup.steps) { %><li class="<%= s.done ? 'done' : '' %>"><a href="<%= s.href %>"><%= s.label %></a><%= s.optional ? ' (không bắt buộc)' : '' %></li><% } %>
+</ol>
+<p class="hint">Bạn có thể tự vận hành toàn bộ mà không cần tạo tài khoản nhân viên. Nếu bạn tự đứng lớp, hãy thêm chính mình là giáo viên.</p></div>
+<% } %>
+
+<% if (d.finance) { %>
+<div class="grid g4 stats" style="margin-bottom:16px">
+  <div class="stat ok"><div class="label">Thực thu tháng này</div><div class="value"><%= vnd(d.finance.totalIn) %></div></div>
+  <div class="stat"><div class="label">Thực chi tháng này</div><div class="value"><%= vnd(d.finance.totalOut) %></div></div>
+  <div class="stat bad"><div class="label">Công nợ hiện tại</div><div class="value"><%= vnd(d.finance.debt) %></div><div class="small muted"><%= vnd(d.finance.overdue) %> quá hạn</div></div>
+  <div class="stat"><div class="label">Tiền trả trước chưa phân bổ</div><div class="value"><%= vnd(d.finance.prepaid) %></div></div>
+</div>
+<% } %>
+
+<div class="grid g2">
+  <div class="card"><h2>Lớp học hôm nay <a class="small" href="/schedule">Xem lịch tuần →</a></h2>
+    <% if (!d.todaySessions.length) { %><p class="muted">Không có buổi học nào hôm nay.</p><% } %>
+    <ul class="list-plain">
+    <% for (const s of d.todaySessions) { %>
+      <li><div><strong><%= s.start_time %>–<%= s.end_time %></strong> · <a href="/classes/<%= s.class_id %>"><%= s.class_name %></a><br>
+        <span class="small muted"><%= s.teacher_name || 'Chưa có GV' %><%= s.teacher_id !== s.main_teacher_id ? ' (dạy thay)' : '' %> · <%= s.room_name || '' %> · <%= s.roster_count %> học sinh</span></div>
+        <% if (s.status === 'cancelled') { %><span class="badge">Đã hủy</span>
+        <% } else if (s.status === 'completed') { %><a class="btn sm" href="/sessions/<%= s.id %>">✓ Đã điểm danh <%= s.present_count %>/<%= s.roster_count %></a>
+        <% } else { %><a class="btn sm primary" href="/sessions/<%= s.id %>">Điểm danh</a><% } %></li>
+    <% } %>
+    </ul>
+    <% if (d.upcoming.length) { %><h3>Sắp tới</h3><ul class="list-plain small">
+      <% for (const s of d.upcoming.filter((x) => x.status !== 'cancelled').slice(0, 8)) { %><li><span><%= D.WEEKDAY_SHORT[D.weekday(s.date)] %> <%= dmy(s.date).slice(0, 5) %> <%= s.start_time %> · <%= s.class_name %></span><span class="muted"><%= s.teacher_name %> · <%= s.roster_count %> HS</span></li><% } %>
+    </ul><% } %>
+  </div>
+
+  <div class="card"><h2>Buổi chưa hoàn tất điểm danh <span class="badge <%= d.pending.length ? 'warn' : 'ok' %>"><%= d.pending.length %></span></h2>
+    <% if (!d.pending.length) { %><p class="muted">Tất cả buổi đã qua đều đã điểm danh. 👍</p><% } %>
+    <ul class="list-plain">
+    <% for (const s of d.pending.slice(0, 10)) { %>
+      <li><span><%= dmy(s.date) %> <%= s.start_time %> · <%= s.class_name %><br><span class="small muted"><%= s.teacher_name %> · đã điểm danh <%= s.marked_count %>/<%= s.roster_count %><%= s.status === 'scheduled' ? ' · chưa xác nhận dạy' : '' %></span></span>
+        <a class="btn sm" href="/sessions/<%= s.id %>">Mở</a></li>
+    <% } %>
+    </ul>
+  </div>
+</div>
+
+<div class="grid g2">
+<% if (d.dueInvoices) { %>
+  <div class="card"><h2>Học phí đến hạn / quá hạn <a class="small" href="/finance?status=overdue">Tất cả →</a></h2>
+    <% if (!d.dueInvoices.length) { %><p class="muted">Không có khoản nào đến hạn trong 3 ngày tới.</p><% } %>
+    <ul class="list-plain">
+    <% for (const i of d.dueInvoices.slice(0, 10)) { %>
+      <li><span><a href="/students/<%= i.student_id %>"><%= i.student_name %></a> · <%= i.class_name || i.description %> · <%= i.period_label %><br>
+        <span class="small <%= i.due_date < d.today ? 'badge bad' : 'muted' %>">Hạn <%= dmy(i.due_date) %><%= i.due_date < d.today ? ' – quá hạn' : '' %></span></span>
+        <span class="actions"><strong class="num"><%= vnd(i.due) %></strong><a class="btn sm primary" href="/payments/new?invoice_id=<%= i.id %>">Thu</a><a class="btn sm" href="/messages/compose?type=fee&student_id=<%= i.student_id %>&invoice_id=<%= i.id %>">Nhắc</a></span></li>
+    <% } %>
+    </ul>
+  </div>
+<% } %>
+  <div class="card"><h2>Học sinh vắng nhiều (30 ngày)</h2>
+    <% if (!d.absences.length) { %><p class="muted">Không có học sinh vắng nhiều.</p><% } %>
+    <ul class="list-plain">
+    <% for (const a of d.absences) { %><li><span><a href="/students/<%= a.student_id %>"><%= a.full_name %></a> · <%= a.class_name %><br><span class="small muted">Vắng <%= a.absent %> buổi (<%= a.excused %> có phép, <%= a.unexcused %> không phép), gần nhất <%= dmy(a.last_date) %></span></span>
+      <a class="btn sm" href="/messages/compose?type=review&student_id=<%= a.student_id %>&class_id=<%= a.class_id %>">Liên hệ</a></li><% } %>
+    </ul>
+  </div>
+</div>
+
+<% if (d.waiting) { %>
+<div class="grid g3">
+  <div class="card"><h2>Chờ xếp lớp <span class="badge info"><%= d.waiting.length %></span></h2>
+    <ul class="list-plain"><% for (const w of d.waiting.slice(0, 8)) { %><li><span><a href="/students/<%= w.student_id %>"><%= w.full_name %></a><br><span class="small muted"><%= w.class_name || w.subject_name || 'Chưa chọn lớp' %><%= w.credit ? ' · cọc ' + vnd(w.credit) : '' %></span></span><a class="btn sm" href="/students/<%= w.student_id %>/enroll?enrollment_id=<%= w.id %>&class_id=<%= w.class_id || '' %>">Xếp lớp</a></li><% } %></ul>
+    <% if (!d.waiting.length) { %><p class="muted">Không có.</p><% } %>
+  </div>
+  <div class="card"><h2>Sắp hết gói buổi</h2>
+    <ul class="list-plain"><% for (const p of d.lowPackages) { %><li><span><a href="/students/<%= p.student_id %>"><%= p.full_name %></a> · <%= p.class_name %></span><span class="badge <%= p.usage.remaining <= 0 ? 'bad' : 'warn' %>">còn <%= p.usage.remaining %> buổi</span></li><% } %></ul>
+    <% if (!d.lowPackages.length) { %><p class="muted">Không có.</p><% } %>
+  </div>
+  <div class="card"><h2>Sắp hết / quá hạn bảo lưu</h2>
+    <ul class="list-plain"><% for (const r of d.reservations) { %><li><span><a href="/students/<%= r.student_id %>"><%= r.student_name %></a> · <%= r.class_name %><br><span class="small muted">Dự kiến quay lại <%= dmy(r.expected_return_date) %></span></span><a class="btn sm" href="/reservations/<%= r.id %>/return">Quay lại</a></li><% } %></ul>
+    <% if (!d.reservations.length) { %><p class="muted">Không có.</p><% } %>
+  </div>
+</div>
+<% } %>

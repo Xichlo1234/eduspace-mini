@@ -1,0 +1,22 @@
+<div class="page-head"><div><h1>Nhập học sinh từ Excel</h1></div><a class="btn" href="/students/template.xlsx">⬇ Tải file mẫu</a></div>
+<% if (!preview) { %>
+<form method="post" action="/students/import" enctype="multipart/form-data" class="card stack">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <ol class="small"><li>Tải file mẫu, điền mỗi học sinh một dòng (chỉ cần họ tên).</li><li>Tải file lên – hệ thống kiểm tra lỗi và hiển thị bản xem trước.</li><li>Kiểm tra rồi bấm “Lưu”. Chưa có gì được ghi trước bước này.</li></ol>
+  <div class="field"><label>File Excel (.xlsx)</label><input type="file" name="file" accept=".xlsx" required></div>
+  <button class="btn primary">Tải lên & kiểm tra</button>
+</form>
+<% } else { const ok = preview.filter((r) => !r.errors.length).length; %>
+<div class="card"><h2>Xem trước: <%= preview.length %> dòng – <%= ok %> hợp lệ, <%= preview.length - ok %> lỗi</h2>
+<div class="table-wrap"><table class="responsive"><thead><tr><th>Dòng</th><th>Họ tên</th><th>Ngày sinh</th><th>Phụ huynh / SĐT</th><th>Kiểm tra</th></tr></thead><tbody>
+<% for (const r of preview) { %><tr>
+  <td data-l="Dòng"><%= r.row %></td><td data-l="Họ tên"><%= r.input.full_name %></td><td data-l="Ngày sinh"><%= r.value ? dmy(r.value.dob) : r.input.dob %></td>
+  <td data-l="PH"><%= r.input.parent_name %> <%= r.value ? r.value.parent_phone : r.input.parent_phone %></td>
+  <td data-l="Kiểm tra"><% if (r.errors.length) { %><span class="badge bad">Lỗi: <%= r.errors.join('; ') %></span><% } else if (r.warnings.length) { %><span class="badge warn"><%= r.warnings.join('; ') %></span><% } else { %><span class="badge ok">OK</span><% } %></td></tr><% } %>
+</tbody></table></div>
+<form method="post" action="/students/import/<%= batch %>/commit" class="stack" style="margin-top:12px"><%- include('partials/csrf') %>
+  <label class="check"><input type="checkbox" name="skip_warnings" value="1" checked> Bỏ qua các dòng “có thể đã có hồ sơ” (để kiểm tra tay sau)</label>
+  <div class="actions"><button class="btn primary">Lưu <%= ok %> học sinh hợp lệ</button><a class="btn" href="/students/import">Chọn file khác</a></div>
+  <p class="hint">Dòng lỗi sẽ không được lưu. Bấm Lưu nhiều lần cũng không tạo trùng.</p>
+</form></div>
+<% } %>

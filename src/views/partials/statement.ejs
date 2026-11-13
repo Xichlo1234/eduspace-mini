@@ -1,0 +1,22 @@
+<%# Bảng tính nghĩa vụ đã phát sinh của đăng ký cũ: st = kết quả settle() %>
+<div class="calc">
+  <table>
+    <thead><tr><th>Khoản</th><th class="num">Phải thu</th><th class="num">Đã phát sinh</th><th class="num">Đã đóng</th><th>Cách tính</th></tr></thead>
+    <tbody>
+    <% for (const l of st.stmt.lines) { %>
+      <tr><td><%= l.inv.code %> · <%= l.inv.period_label %></td><td class="num"><%= vnd(l.inv.amount) %></td><td class="num"><%= vnd(l.incurred) %></td><td class="num"><%= vnd(l.inv.paid) %></td><td class="small"><%= l.explain %></td></tr>
+    <% } %>
+    <% if (!st.stmt.lines.length) { %><tr><td colspan="5" class="muted">Chưa có khoản học phí nào</td></tr><% } %>
+    </tbody>
+  </table>
+  <ul class="list-plain small" style="margin-top:8px">
+    <li><span>Học phí đã phát sinh (đến trước ngày hiệu lực)</span><strong><%= vnd(st.stmt.incurred) %></strong></li>
+    <li><span>Tiền đã đóng cho lớp này</span><strong><%= vnd(st.stmt.paid) %></strong></li>
+    <li><span>Giá trị đã đóng nhưng chưa sử dụng → chuyển ra</span><strong><%= vnd(st.released) %></strong></li>
+    <% if (st.nettedDebt) { %><li><span>Trong đó dùng bù nợ cũ của lớp này</span><strong>−<%= vnd(st.nettedDebt) %></strong></li><% } %>
+    <li><span>Công nợ còn lại của lớp này</span><strong class="<%= st.debtRemaining ? 'badge bad' : '' %>"><%= vnd(st.debtRemaining) %></strong></li>
+    <% if (st.stmt.unusedSessions) { %><li><span>Số buổi đã mua/tính phí chưa học</span><strong><%= st.stmt.unusedSessions %> buổi</strong></li><% } %>
+    <% if (st.stmt.overused) { %><li><span class="badge warn">Học vượt số buổi đã mua: <%= st.stmt.overused %> buổi – hệ thống không tự tính tiền, hãy tạo khoản thu nếu cần</span></li><% } %>
+  </ul>
+  <p class="hint">Phần học phí chưa đóng của các buổi chưa học được giảm khỏi khoản phải thu. Chỉ phần <em>đã đóng</em> vượt số đã phát sinh mới được chuyển.</p>
+</div>

@@ -1,0 +1,17 @@
+<div class="page-head"><div><h1>Bảo lưu: <a href="/students/<%= e.student_id %>"><%= e.student_name %></a></h1><div class="muted">Lớp <%= e.class_name %> (từ <%= dmy(e.start_date) %>)</div></div></div>
+<%- include('partials/form_error') %>
+<form method="post" class="card stack" id="main-form"><%- include('partials/csrf') %>
+  <div class="row">
+    <div class="field"><label>Ngày bắt đầu bảo lưu</label><input name="start_date" value="<%= v.start_date %>" placeholder="dd/mm/yyyy"><span class="hint">Buổi đầu tiên học sinh nghỉ.</span></div>
+    <div class="field"><label>Ngày dự kiến quay lại</label><input name="expected_return_date" value="<%= v.expected_return_date || '' %>" placeholder="dd/mm/yyyy"></div>
+  </div>
+  <div class="field"><label>Lý do *</label><input name="reason" required value="<%= v.reason || '' %>"></div>
+  <% if (preview) { %>
+  <%- include('partials/statement', { st: preview }) %>
+  <div class="calc"><ul class="list-plain">
+    <li><span>Giá trị học phí được bảo lưu (đã đóng, chưa sử dụng)</span><strong class="big-total"><%= vnd(preview.credit_amount) %></strong></li>
+    <% if (preview.credit_sessions) { %><li><span>Số buổi còn được sử dụng</span><strong><%= preview.credit_sessions %> buổi</strong></li><% } %>
+  </ul><p class="hint">Trong thời gian bảo lưu: không phát sinh học phí mới; giá trị bảo lưu được giữ riêng, không dùng cho khoản khác. Khi quay lại, bạn chọn lớp và giá trị này được trừ vào học phí.</p></div>
+  <div class="actions"><button class="btn primary" name="action" value="confirm">Xác nhận bảo lưu</button><button class="btn" name="action" value="preview">Tính lại</button></div>
+  <% } else { %><button class="btn primary" name="action" value="preview">Xem bảng tính</button><% } %>
+</form>

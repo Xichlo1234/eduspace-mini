@@ -1,0 +1,96 @@
+<div class="page-head">
+  <div><h1><%= s.full_name %> <span class="muted small"><%= s.code %></span> <% if (s.status === 'inactive') { %><span class="badge">Ngừng theo dõi</span><% } %></h1>
+    <div class="muted"><%= s.dob ? 'Sinh ' + dmy(s.dob) + ' · ' : '' %>PH: <%= s.parent_name || '—' %> · <%= s.parent_phone || '—' %><%= s.entry_level ? ' · Đầu vào: ' + s.entry_level : '' %></div>
+    <% if (siblings.length) { %><div class="small">Anh chị em (chung SĐT): <% for (const x of siblings) { %><a href="/students/<%= x.id %>"><%= x.full_name %></a> <% } %></div><% } %>
+  </div>
+  <% if (isOp) { %><div class="actions">
+    <a class="btn primary" href="/students/<%= s.id %>/enroll">Xếp lớp</a>
+    <a class="btn primary" href="/payments/new?student_id=<%= s.id %>">Thu tiền</a>
+    <% const act = enrollments.filter((e) => e.status === 'active'); if (act.length === 1) { %>
+      <a class="btn" href="/enrollments/<%= act[0].id %>/transfer">Chuyển lớp</a><a class="btn" href="/enrollments/<%= act[0].id %>/reserve">Bảo lưu</a>
+    <% } %>
+    <a class="btn" href="/messages/compose?type=fee&student_id=<%= s.id %>">Nhắn phụ huynh</a>
+    <a class="btn" href="/students/<%= s.id %>/edit">Sửa hồ sơ</a>
+  </div><% } %>
+</div>
+<% if (s.note) { %><div class="alert info">Ghi chú: <%= s.note %></div><% } %>
+
+<% if (isOp) { const debt = invoices.filter((i) => i.status === 'active').reduce((a, i) => a + Math.max(0, i.due), 0); %>
+<div class="grid g4 stats" style="margin-bottom:16px">
+  <div class="stat <%= debt ? 'bad' : 'ok' %>"><div class="label">Còn nợ</div><div class="value"><%= vnd(debt) %></div></div>
+  <div class="stat"><div class="label">Tiền trả trước chưa dùng</div><div class="value"><%= vnd(credit.free) %></div></div>
+  <div class="stat"><div class="label">Đang giữ cho bảo lưu</div><div class="value"><%= vnd(credit.reserved) %></div></div>
+  <div class="stat"><div class="label">Đã đóng (tổng phiếu thu)</div><div class="value"><%= vnd(receipts.filter((r) => r.status === 'valid').reduce((a, r) => a + r.amount, 0)) %></div></div>
+</div>
+<% } %>
+
+<div class="card" id="lop"><h2>Lớp học</h2>
+<div class="table-wrap"><table class="responsive"><thead><tr><th>Lớp</th><th>Trạng thái</th><th>Thời gian</th><th>Học phí</th><th></th></tr></thead><tbody>
+<% for (const e of enrollments) { %><tr>
+  <td data-l="Lớp"><% if (e.class_id) { %><a href="/classes/<%= e.class_id %>"><%= e.class_name %></a><% } else { %><%= e.subject_name || 'Chưa chọn lớp' %><% } %><div class="small muted"><%= e.teacher_name || '' %></div></td>
+  <td data-l="Trạng thái"><span class="badge <%= { active: 'ok', waiting: 'info', reserved: 'warn', dropped: 'bad' }[e.status] || '' %>"><%= STATUS[e.status] %></span></td>
+  <td data-l="Thời gian"><%= e.start_date ? dmy(e.start_date) : '—' %> → <%= e.end_date ? dmy(e.end_date) : '' %></td>
+  <td data-l="Học phí" class="small"><%= e.fee_type ? { monthly: 'Theo tháng', course: 'Theo khóa', package: 'Gói buổi' }[e.fee_type] : '' %>
+    <% if (e.usage) { %><br>Đã mua <%= e.usage.purchased %> · đã dùng <%= e.usage.used %> · <strong class="<%= e.usage.remaining <= 2 ? 'badge warn' : '' %>">còn <%= e.usage.remaining %> buổi</strong><%= e.usage.unmarked ? ` · ${e.usage.unmarked} buổi chưa điểm danh` : '' %><% } %></td>
+  <td class="right"><% if (isOp) { %><div class="actions" style="justify-content:flex-end">
+    <% if (e.status === 'waiting') { %><a class="btn sm primary" href="/students/<%= s.id %>/enroll?enrollment_id=<%= e.id %>&class_id=<%= e.class_id || '' %>">Xếp lớp</a><a class="btn sm" href="/enrollments/<%= e.id %>/drop">Hủy chờ</a><% } %>
+    <% if (e.status === 'active') { %><a class="btn sm" href="/invoices/new?student_id=<%= s.id %>">Tạo học phí kỳ sau</a><a class="btn sm" href="/enrollments/<%= e.id %>/transfer">Chuyển lớp</a><a class="btn sm" href="/enrollments/<%= e.id %>/reserve">Bảo lưu</a><a class="btn sm" href="/enrollments/<%= e.id %>/drop">Nghỉ học</a>
+      <form method="post" action="/enrollments/<%= e.id %>/complete" data-confirm="Đánh dấu hoàn thành lớp này?" style="display:inline"><%- include('partials/csrf') %><button class="btn sm">Hoàn thành</button></form><% } %>
+    <% if (e.status === 'reserved') { const rv = reservations.find((r) => r.enrollment_id === e.id && r.status === 'active'); if (rv) { %><a class="btn sm primary" href="/reservations/<%= rv.id %>/return">Quay lại học</a><a class="btn sm" href="/enrollments/<%= e.id %>/drop">Nghỉ hẳn</a><% } } %>
+  </div><% } %></td></tr><% } %>
+<% if (!enrollments.length) { %><tr><td colspan="5" class="muted">Chưa đăng ký lớp nào.</td></tr><% } %>
+</tbody></table></div>
+<% if (isOp && reservations.length) { %><h3>Bảo lưu</h3><ul class="list-plain small"><% for (const r of reservations) { %>
+  <li><span><%= r.class_name %>: từ <%= dmy(r.start_date) %> <%= r.expected_return_date ? '→ dự kiến ' + dmy(r.expected_return_date) : '' %> · <%= r.reason %></span>
+  <span>Giá trị giữ: <strong><%= vnd(r.credit_amount) %></strong><%= r.credit_sessions ? ` (${r.credit_sessions} buổi)` : '' %> · <span class="badge <%= r.status === 'active' ? 'warn' : '' %>"><%= { active: 'Đang bảo lưu', returned: 'Đã quay lại', closed: 'Đã đóng' }[r.status] %></span></span></li><% } %></ul><% } %>
+</div>
+
+<div class="card" id="chuyen-can"><h2>Chuyên cần & kết quả học tập</h2>
+  <% const sum = Object.entries(att.summary); if (sum.length) { %>
+  <div class="grid g3"><% for (const [cls, x] of sum) { const tot = x.present + x.excused + x.unexcused; %><div class="calc"><strong><%= cls %></strong><br>
+    Có mặt <%= x.present %>/<%= tot %> buổi<%= tot ? ` (${Math.round(x.present * 100 / tot)}%)` : '' %> · vắng có phép <%= x.excused %> · không phép <%= x.unexcused %>
+    <% if (x.scores.length) { %><br>Điểm TB: <strong><%= (x.scores.reduce((a, b) => a + b, 0) / x.scores.length).toFixed(1) %></strong> (<%= x.scores.length %> lần)<% } %></div><% } %></div>
+  <% } %>
+  <details class="box"><summary>Chi tiết từng buổi (<%= att.rows.length %>)</summary>
+  <div class="table-wrap"><table class="responsive"><thead><tr><th>Ngày</th><th>Lớp</th><th>Điểm danh</th><th>Điểm</th><th>Nhận xét</th></tr></thead><tbody>
+  <% for (const a of att.rows.slice(0, 200)) { %><tr><td data-l="Ngày"><a href="/sessions/<%= a.session_id %>"><%= dmy(a.date) %></a></td><td data-l="Lớp"><%= a.class_name %></td>
+    <td data-l="Điểm danh"><span class="badge <%= { present: 'ok', excused: 'warn', unexcused: 'bad' }[a.status] || '' %>"><%= ATT[a.status] %></span></td><td data-l="Điểm"><%= a.score ?? '' %></td><td data-l="Nhận xét"><%= a.comment || '' %></td></tr><% } %>
+  </tbody></table></div></details>
+  <div class="actions" style="margin-top:10px"><a class="btn sm" href="/messages/compose?type=review&student_id=<%= s.id %>">Soạn tin nhận xét gửi phụ huynh</a></div>
+</div>
+
+<% if (isOp) { %>
+<div class="card" id="hoc-phi"><h2>Học phí <a class="btn sm" href="/invoices/new?student_id=<%= s.id %>">+ Tạo khoản thu</a></h2>
+<div class="table-wrap"><table class="responsive"><thead><tr><th>Mã</th><th>Khoản</th><th class="num">Phải thu</th><th class="num">Đã đóng</th><th class="num">Còn nợ</th><th>Hạn</th><th></th></tr></thead><tbody>
+<% for (const i of invoices) { %><tr class="<%= i.status === 'void' ? 'void' : '' %>">
+  <td data-l="Mã"><a href="/invoices/<%= i.id %>"><%= i.code %></a></td><td data-l="Khoản"><%= i.class_name || '' %> · <%= i.period_label || i.description %></td>
+  <td data-l="Phải thu" class="num"><%= vnd(i.amount) %><%= i.amount !== i.base_amount ? ' *' : '' %></td><td data-l="Đã đóng" class="num"><%= vnd(i.paid) %></td>
+  <td data-l="Còn nợ" class="num"><strong class="<%= i.due > 0 ? 'badge bad' : '' %>"><%= vnd(i.due) %></strong></td><td data-l="Hạn"><%= dmy(i.due_date) %></td>
+  <td class="right"><% if (i.status === 'active' && i.due > 0) { %><a class="btn sm primary" href="/payments/new?invoice_id=<%= i.id %>">Thu</a><% } %></td></tr><% } %>
+<% if (!invoices.length) { %><tr><td colspan="7" class="muted">Chưa có khoản phải thu.</td></tr><% } %>
+</tbody></table></div>
+<p class="hint">* đã có miễn giảm/điều chỉnh – mở khoản để xem lý do và lịch sử.</p>
+
+<h3>Phiếu thu</h3>
+<ul class="list-plain small"><% for (const r of receipts) { %><li class="<%= r.status === 'void' ? 'muted' : '' %>"><span><a href="/receipts/<%= r.id %>"><%= r.code %></a> · <%= dmy(r.paid_date) %> · <%= r.period_label %> · <%= r.method === 'cash' ? 'Tiền mặt' : 'Chuyển khoản' %><%= r.status === 'void' ? ' · ĐÃ HỦY: ' + r.void_reason : '' %></span><strong><%= vnd(r.amount) %></strong></li><% } %>
+<% if (!receipts.length) { %><li class="muted">Chưa có phiếu thu.</li><% } %></ul>
+
+<details class="box"><summary>Sổ tiền trả trước (<%= vnd(credit.free) %> chưa dùng<%= credit.reserved ? ', ' + vnd(credit.reserved) + ' giữ bảo lưu' : '' %>)</summary>
+<ul class="list-plain small"><% for (const c of creditHistory) { %><li><span><%= D.displayDateTime(c.created_at) %> · <%= c.note %><%= c.reservation_id ? ' [bảo lưu]' : '' %></span><strong class="num"><%= c.amount > 0 ? '+' : '' %><%= vnd(c.amount) %></strong></li><% } %></ul>
+<% if (credit.free > 0) { %>
+<form method="post" action="/students/<%= s.id %>/refund" class="row" style="margin-top:10px" data-confirm="Hoàn tiền cho phụ huynh? Hệ thống sẽ tạo một phiếu chi."><%- include('partials/csrf') %><input type="hidden" name="idempotency_key" value="<%= newKey() %>">
+  <div class="field"><label>Hoàn tiền cho phụ huynh</label><input name="amount" data-money value="<%= M.num(credit.free) %>"></div>
+  <div class="field"><label>Hình thức</label><select name="method"><option value="cash">Tiền mặt</option><option value="transfer">Chuyển khoản</option></select></div>
+  <div class="field" style="flex:2 1 200px"><label>Lý do</label><input name="reason" required></div><button class="btn danger">Hoàn tiền</button></form>
+<% } %></details>
+</div>
+
+<div class="card" id="lien-lac"><h2>Lịch sử liên lạc <a class="btn sm" href="/messages/compose?type=fee&student_id=<%= s.id %>">Soạn tin</a></h2>
+<ul class="list-plain small"><% for (const c of contacts) { %><li><span><%= D.displayDateTime(c.created_at) %> · <%= { fee: 'Nhắc học phí', absence: 'Báo vắng', schedule: 'Đổi lịch', review: 'Nhận xét' }[c.template] || '' %> · <%= c.channel %> · <%= c.user_name %><%= c.note ? ' · ' + c.note : '' %></span>
+  <details><summary class="small">Nội dung</summary><pre class="small" style="white-space:pre-wrap"><%= c.content %></pre></details></li><% } %>
+<% if (!contacts.length) { %><li class="muted">Chưa có.</li><% } %></ul></div>
+
+<details class="card"><summary>Lịch sử thay đổi (xếp lớp, chuyển lớp, bảo lưu…)</summary>
+<ul class="list-plain small"><% for (const ev of events) { %><li><span><%= D.displayDateTime(ev.created_at) %> · <%= ev.class_name || '' %> · <%= { enroll: 'Xếp lớp', place: 'Xếp lớp từ danh sách chờ', waitlist: 'Đưa vào danh sách chờ', transfer: 'Chuyển lớp', reserve: 'Bảo lưu', return: 'Quay lại sau bảo lưu', drop: 'Nghỉ học', complete: 'Hoàn thành' }[ev.type] || ev.type %> (hiệu lực <%= dmy(ev.date) %>)<%= ev.reason ? ' · Lý do: ' + ev.reason : '' %></span><span class="muted"><%= ev.user_name %></span></li><% } %></ul>
+</details>
+<% } %>

@@ -1,0 +1,76 @@
+<div class="page-head">
+  <div><h1><a href="/classes/<%= s.class_id %>"><%= s.class_name %></a></h1>
+  <div class="muted"><%= D.WEEKDAY_NAMES[D.weekday(s.date)] %> <%= dmy(s.date) %> · <%= s.start_time %>–<%= s.end_time %> · GV: <%= s.teacher_name || '—' %><%= s.teacher_id !== s.main_teacher_id ? ' (dạy thay cho ' + (s.main_teacher_name || '') + ')' : '' %> · <%= s.room_name || '' %>
+  · <span class="badge <%= s.status === 'completed' ? 'ok' : s.status === 'cancelled' ? '' : 'info' %>"><%= { scheduled: 'Đã lên lịch', completed: 'Đã dạy xong', cancelled: 'Đã hủy' }[s.status] %></span></div></div>
+</div>
+
+<% if (s.status === 'cancelled') { %><div class="alert warn">Buổi học đã hủy: <%= s.cancel_reason %></div><% } %>
+
+<% if (canMark) { %>
+<form method="post" action="/sessions/<%= s.id %>/attendance" class="card attendance"><%- include('partials/csrf') %>
+  <h2>Điểm danh (<%= students.length %> học sinh) <button type="button" class="btn sm ok" id="mark-all-present">✓ Đánh dấu tất cả có mặt</button></h2>
+  <% if (!students.length) { %><p class="muted">Chưa có học sinh nào trong lớp vào ngày này.</p><% } %>
+  <% students.forEach(function (st, i) { %>
+  <div class="att-row">
+    <div><strong><%= st.full_name %></strong><div class="small muted"><%= st.code %><%= st.enrollment_status !== 'active' ? ' · ' + st.enrollment_status : '' %></div>
+      <input type="hidden" name="items[<%= i %>][student_id]" value="<%= st.student_id %>"></div>
+    <div class="seg">
+      <% for (const [k, label] of Object.entries(STATUS)) { %><label class="<%= k %>"><input type="radio" name="items[<%= i %>][status]" value="<%= k %>" <%= st.status === k ? 'checked' : '' %>><span><%= label %></span></label><% } %>
+    </div>
+    <div><input name="items[<%= i %>][score]" value="<%= st.score ?? '' %>" placeholder="Điểm" inputmode="decimal"></div>
+    <div><input name="items[<%= i %>][comment]" value="<%= st.comment || '' %>" placeholder="Nhận xét ngắn"></div>
+  </div>
+  <% }) %>
+  <div class="sticky-save">
+    <% if (s.status === 'scheduled') { %><label class="check"><input type="checkbox" name="complete" value="1" checked> Xác nhận buổi này đã dạy xong (tính tiền dạy cho GV <%= s.teacher_name || '' %>)</label><% } else { %><input type="hidden" name="complete" value="0"><% } %>
+    <button class="btn primary">Lưu điểm danh</button>
+    <span id="unsaved" class="badge warn" hidden>Có thay đổi chưa lưu</span>
+  </div>
+  <p class="hint">Dữ liệu chỉ được ghi khi bấm “Lưu điểm danh”.</p>
+</form>
+<% } else if (s.status !== 'cancelled') { %>
+<div class="alert info">Chưa đến ngày học – có thể điểm danh từ ngày <%= dmy(s.date) %>.</div>
+<div class="card"><h2>Danh sách lớp (<%= students.length %>)</h2><ul class="list-plain"><% for (const st of students) { %><li><%= st.full_name %> <span class="muted small"><%= st.code %></span></li><% } %></ul></div>
+<% } %>
+
+<% const absentees = students.filter((x) => x.status === 'excused' || x.status === 'unexcused'); if (absentees.length) { %>
+<div class="card"><h2>Báo vắng cho phụ huynh</h2><ul class="list-plain"><% for (const a of absentees) { %>
+  <li><span><%= a.full_name %> – <%= STATUS[a.status] %></span><a class="btn sm" href="/messages/compose?type=absence&student_id=<%= a.student_id %>&session_id=<%= s.id %>">Soạn tin báo vắng</a></li><% } %></ul></div>
+<% } %>
+
+<% if (canEdit) { %>
+<div class="grid g2">
+  <% if (s.status === 'scheduled') { %>
+  <form method="post" action="/sessions/<%= s.id %>/update" class="card stack"><%- include('partials/csrf') %>
+    <h2>Đổi lịch / đổi giáo viên buổi này</h2>
+    <div class="row">
+      <div class="field"><label>Ngày</label><input name="date" value="<%= dmy(s.date) %>" placeholder="dd/mm/yyyy"></div>
+      <div class="field"><label>Bắt đầu</label><input type="time" name="start_time" value="<%= s.start_time %>"></div>
+      <div class="field"><label>Kết thúc</label><input type="time" name="end_time" value="<%= s.end_time %>"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Giáo viên đứng lớp</label><select name="teacher_id"><option value="">—</option><% for (const t of teachers) { %><option value="<%= t.id %>" <%= t.id === s.teacher_id ? 'selected' : '' %>><%= t.full_name %><%= t.id === s.main_teacher_id ? ' (GV chính)' : '' %></option><% } %></select></div>
+      <div class="field"><label>Phòng</label><select name="room_id"><option value="">—</option><% for (const r of rooms) { %><option value="<%= r.id %>" <%= r.id === s.room_id ? 'selected' : '' %>><%= r.name %></option><% } %></select></div>
+    </div>
+    <div class="field"><label>Lý do / ghi chú</label><input name="reason" placeholder="VD: GV chính nghỉ ốm, cô Lan dạy thay"></div>
+    <label class="check"><input type="checkbox" name="force" value="1"> Vẫn lưu nếu trùng lịch giáo viên/phòng</label>
+    <button class="btn">Lưu thay đổi buổi học</button>
+    <p class="hint">Sau khi đổi, có thể <a href="/messages/compose?type=schedule&student_id=<%= students[0] ? students[0].student_id : '' %>&class_id=<%= s.class_id %>">soạn tin thông báo đổi lịch</a> cho từng phụ huynh.</p>
+  </form>
+  <% if (!s.attendance_saved_at) { %>
+  <form method="post" action="/sessions/<%= s.id %>/cancel" class="card stack" data-confirm="Hủy buổi học này?"><%- include('partials/csrf') %>
+    <h2>Hủy buổi học</h2>
+    <p class="hint">Buổi do trung tâm hủy không tính phí và không tính là buổi đã học. <%= s.total_sessions ? 'Lớp theo khóa sẽ tự thêm một buổi bù cuối khóa.' : '' %></p>
+    <div class="field"><label>Lý do</label><input name="reason" required></div>
+    <button class="btn danger">Hủy buổi</button>
+  </form>
+  <% } %>
+  <% } else if (s.status === 'cancelled' && !s.total_sessions) { %>
+  <form method="post" action="/sessions/<%= s.id %>/restore" class="card"><%- include('partials/csrf') %><h2>Khôi phục buổi học</h2><button class="btn">Khôi phục</button></form>
+  <% } else if (s.status === 'completed') { %>
+  <form method="post" action="/sessions/<%= s.id %>/reopen" class="card stack" data-confirm="Bỏ xác nhận đã dạy buổi này?"><%- include('partials/csrf') %>
+    <h2>Bỏ xác nhận “đã dạy xong”</h2><p class="hint">Chỉ dùng khi xác nhận nhầm. Không làm được nếu đã chi tiền dạy tháng này.</p>
+    <div class="field"><label>Lý do</label><input name="reason" required></div><button class="btn danger">Bỏ xác nhận</button></form>
+  <% } %>
+</div>
+<% } %>

@@ -1,0 +1,32 @@
+<div class="page-head"><div><h1>Báo cáo</h1><div class="muted"><%= dmy(from) %> – <%= dmy(to) %></div></div>
+<form method="get" class="actions"><input name="from" value="<%= dmy(from) %>" style="width:130px"><input name="to" value="<%= dmy(to) %>" style="width:130px"><button class="btn">Xem</button></form></div>
+<div class="actions" style="margin-bottom:12px"><span class="muted small">Xuất Excel:</span>
+  <a class="btn sm" href="/reports/export/summary.xlsx?from=<%= from %>&to=<%= to %>">Tổng hợp</a><a class="btn sm" href="/reports/export/receipts.xlsx?from=<%= from %>&to=<%= to %>">Phiếu thu</a>
+  <a class="btn sm" href="/reports/export/cashbook.xlsx?from=<%= from %>&to=<%= to %>">Sổ thu chi</a><a class="btn sm" href="/reports/export/debts.xlsx">Công nợ</a><a class="btn sm" href="/students/export.xlsx">Học sinh</a><a class="btn sm" href="/teachers/pay.xlsx">Tiền dạy</a></div>
+<h2>Dòng tiền trong kỳ</h2>
+<div class="grid g4 stats" style="margin-bottom:16px">
+  <div class="stat ok"><div class="label">Tiền thực thu</div><div class="value"><%= vnd(f.totalIn) %></div><div class="small muted">Học sinh <%= vnd(f.tuitionIn) %> (cọc <%= vnd(f.deposits) %>) · khác <%= vnd(f.otherIn) %></div></div>
+  <div class="stat"><div class="label">Tiền thực chi</div><div class="value"><%= vnd(f.totalOut) %></div></div>
+  <div class="stat"><div class="label">Chênh lệch thu – chi tiền</div><div class="value"><%= vnd(f.net) %></div><div class="small muted">Không phải lợi nhuận kế toán</div></div>
+  <div class="stat"><div class="label">Học phí phát sinh trong kỳ</div><div class="value"><%= vnd(f.billed) %></div><div class="small muted">Số phải thu tạo trong kỳ</div></div>
+</div>
+<h2>Số dư hiện tại</h2>
+<div class="grid g4 stats" style="margin-bottom:16px">
+  <div class="stat bad"><div class="label">Công nợ chưa thu</div><div class="value"><%= vnd(f.debt) %></div><div class="small muted"><%= f.debtCount %> khoản</div></div>
+  <div class="stat bad"><div class="label">Trong đó quá hạn</div><div class="value"><%= vnd(f.overdue) %></div></div>
+  <div class="stat"><div class="label">Tiền trả trước chưa phân bổ</div><div class="value"><%= vnd(f.prepaid) %></div><div class="small muted">Đã thu, chưa gắn khoản học phí</div></div>
+  <div class="stat"><div class="label">Đang giữ cho bảo lưu</div><div class="value"><%= vnd(f.reservedCredit) %></div></div>
+</div>
+<div class="grid g2">
+<div class="card"><h2>Chi theo danh mục</h2><table><tbody><% for (const o of f.outByCat) { %><tr><td><%= o.label %></td><td class="num"><%= vnd(o.s) %></td></tr><% } %>
+<% if (!f.outByCat.length) { %><tr><td class="muted">Chưa có khoản chi.</td></tr><% } %></tbody></table>
+<h3>Theo hình thức (ròng)</h3><table><tbody><tr><td>Tiền mặt</td><td class="num"><%= vnd(f.byMethod.cash) %></td></tr><tr><td>Chuyển khoản</td><td class="num"><%= vnd(f.byMethod.transfer) %></td></tr></tbody></table></div>
+<div class="card"><h2>Theo lớp</h2><div class="table-wrap"><table class="responsive"><thead><tr><th>Lớp</th><th class="num">HS</th><th class="num">Thực thu kỳ</th><th class="num">Công nợ</th></tr></thead><tbody>
+<% for (const c of byClass) { %><tr><td data-l="Lớp"><a href="/classes/<%= c.id %>"><%= c.name %></a></td><td class="num" data-l="HS"><%= c.students %></td><td class="num" data-l="Thu"><%= vnd(c.collected) %></td><td class="num" data-l="Nợ"><%= vnd(c.debt) %></td></tr><% } %></tbody></table></div></div>
+</div>
+<div class="card"><h2>Công nợ theo học sinh (<%= debts.length %>)</h2><div class="table-wrap"><table class="responsive"><thead><tr><th>Học sinh</th><th>Phụ huynh</th><th>Khoản</th><th>Hạn sớm nhất</th><th class="num">Còn nợ</th><th></th></tr></thead><tbody>
+<% for (const d of debts) { %><tr><td data-l="HS"><a href="/students/<%= d.id %>"><%= d.full_name %></a> <span class="small muted"><%= d.code %></span></td><td data-l="PH"><%= d.parent_name %> <%= d.parent_phone %></td><td data-l="Khoản" class="small"><%= d.items %></td>
+  <td data-l="Hạn"><span class="<%= d.oldest_due < today ? 'badge bad' : '' %>"><%= dmy(d.oldest_due) %></span></td><td class="num" data-l="Còn nợ"><strong><%= vnd(d.due) %></strong></td><td><a class="btn sm" href="/messages/compose?type=fee&student_id=<%= d.id %>">Nhắc</a></td></tr><% } %>
+<% if (!debts.length) { %><tr><td colspan="6" class="muted">Không có công nợ.</td></tr><% } %></tbody></table></div></div>
+<div class="card"><h2>Chuyên cần theo lớp (buổi đã dạy trong kỳ)</h2><div class="table-wrap"><table class="responsive"><thead><tr><th>Lớp</th><th class="num">Buổi</th><th class="num">Có mặt</th><th class="num">Vắng có phép</th><th class="num">Vắng không phép</th><th class="num">Chưa điểm danh</th></tr></thead><tbody>
+<% for (const a of att) { %><tr><td data-l="Lớp"><%= a.name %></td><td class="num" data-l="Buổi"><%= a.sessions %></td><td class="num" data-l="Có mặt"><%= a.present || 0 %></td><td class="num" data-l="CP"><%= a.excused || 0 %></td><td class="num" data-l="KP"><%= a.unexcused || 0 %></td><td class="num" data-l="Chưa"><%= a.unmarked || 0 %></td></tr><% } %></tbody></table></div></div>

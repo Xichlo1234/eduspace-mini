@@ -1,0 +1,11 @@
+<div class="page-head"><h1>Danh sách chờ & bảo lưu</h1></div>
+<div class="card"><h2>Chờ xếp lớp (<%= list.length %>)</h2>
+<div class="table-wrap"><table class="responsive"><thead><tr><th>Học sinh</th><th>Nhu cầu</th><th>Ngày đăng ký</th><th class="num">Đặt cọc</th><th>Ghi chú</th><th></th></tr></thead><tbody>
+<% for (const w of list) { %><tr><td data-l="HS"><a href="/students/<%= w.student_id %>"><%= w.full_name %></a> <span class="muted small"><%= w.code %> · <%= w.parent_phone %></span></td>
+  <td data-l="Nhu cầu"><%= w.class_name || w.subject_name || '—' %></td><td data-l="Ngày"><%= D.displayDateTime(w.created_at).slice(0, 10) %></td><td class="num" data-l="Cọc"><%= vnd(w.credit) %></td><td data-l="Ghi chú"><%= w.note %></td>
+  <td class="right"><a class="btn sm primary" href="/students/<%= w.student_id %>/enroll?enrollment_id=<%= w.id %>&class_id=<%= w.class_id || '' %>">Xếp lớp</a>
+    <form method="post" action="/enrollments/<%= w.id %>/cancel-waiting" style="display:inline" data-confirm="Xóa khỏi danh sách chờ?"><%- include('partials/csrf') %><button class="btn sm">Bỏ</button></form></td></tr><% } %>
+<% if (!list.length) { %><tr><td colspan="6" class="muted">Không có.</td></tr><% } %></tbody></table></div></div>
+<div class="card"><h2>Đang bảo lưu (<%= reservations.length %>)</h2>
+<ul class="list-plain"><% for (const r of reservations) { %><li><span><a href="/students/<%= r.student_id %>"><%= r.student_name %></a> · <%= r.class_name %> · từ <%= dmy(r.start_date) %><%= r.expected_return_date ? ' → ' + dmy(r.expected_return_date) : '' %> · giữ <%= vnd(r.held) %></span><a class="btn sm" href="/reservations/<%= r.id %>/return">Quay lại học</a></li><% } %>
+<% if (!reservations.length) { %><li class="muted">Không có.</li><% } %></ul></div>

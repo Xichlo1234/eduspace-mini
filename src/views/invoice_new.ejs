@@ -1,0 +1,29 @@
+<div class="page-head"><div><h1>Tạo khoản thu: <a href="/students/<%= s.id %>"><%= s.full_name %></a></h1></div></div>
+<div class="grid g2">
+<div class="card"><h2>Học phí kỳ tiếp theo</h2>
+<% if (!next.length) { %><p class="muted">Học sinh chưa có lớp đang học.</p><% } %>
+<% for (const n of next) { %>
+  <form method="post" action="/invoices" class="stack calc" style="margin-bottom:12px"><%- include('partials/csrf') %>
+    <input type="hidden" name="kind" value="tuition"><input type="hidden" name="enrollment_id" value="<%= n.e.id %>"><input type="hidden" name="idempotency_key" value="<%= newKey() %>">
+    <strong><%= n.cls.name %></strong>
+    <% if (n.calc.error) { %><div class="alert warn"><%= n.calc.error %></div><% } else { %>
+      <% if (n.ym) { %><div class="field" style="max-width:220px"><label>Tháng</label><input type="month" name="ym" value="<%= n.ym %>"></div><% } %>
+      <ul class="small"><% for (const l of n.calc.lines) { %><li><%= l %></li><% } %></ul>
+      <div><%= n.calc.period_label %>: <strong><%= vnd(n.calc.base_amount) %></strong> <span class="hint">(nếu đổi tháng, số tiền được tính lại theo tháng đã chọn)</span></div>
+      <% if (can.adjustMoney) { %><div class="row"><div class="field"><label>Miễn giảm</label><input name="discount" data-money></div><div class="field"><label>Lý do</label><input name="discount_reason"></div></div><% } %>
+      <label class="check"><input type="checkbox" name="apply_credit" value="1" checked> Trừ tiền trả trước nếu có</label>
+      <button class="btn primary">Tạo khoản học phí</button>
+    <% } %>
+  </form>
+<% } %>
+</div>
+<form method="post" action="/invoices" class="card stack"><%- include('partials/csrf') %>
+  <h2>Khoản thu khác (sách, đồng phục…)</h2>
+  <input type="hidden" name="kind" value="other"><input type="hidden" name="student_id" value="<%= s.id %>"><input type="hidden" name="idempotency_key" value="<%= newKey() %>">
+  <div class="field"><label>Loại</label><select name="category"><% for (const [k, v] of Object.entries(CATEGORIES)) { if (k === 'tuition') continue; %><option value="<%= k %>"><%= v %></option><% } %></select></div>
+  <div class="field"><label>Nội dung</label><input name="description" placeholder="VD: Giáo trình Family and Friends 3"></div>
+  <div class="row"><div class="field"><label>Số tiền</label><input name="amount" data-money required></div>
+  <div class="field"><label>Lớp (nếu có)</label><select name="class_id"><option value="">—</option><% for (const e of classesList) { %><option value="<%= e.class_id %>"><%= e.class_name %></option><% } %></select></div></div>
+  <button class="btn primary">Tạo khoản thu</button>
+</form>
+</div>

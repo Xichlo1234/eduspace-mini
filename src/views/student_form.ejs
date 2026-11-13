@@ -1,0 +1,27 @@
+<div class="page-head"><h1><%= title %></h1></div>
+<%- include('partials/form_error') %>
+<% if (dups && dups.length) { %><div class="alert warn"><strong>Có thể học sinh đã có hồ sơ:</strong>
+  <ul><% for (const d of dups) { %><li><a href="/students/<%= d.id %>" target="_blank"><%= d.code %> – <%= d.full_name %></a> (<%= dmy(d.dob) %>, <%= d.parent_phone %>)</li><% } %></ul>
+  Nếu đúng là học sinh đó, hãy mở hồ sơ cũ và xếp thêm lớp (một học sinh học nhiều lớp chỉ cần một hồ sơ). Nếu là người khác, bấm “Vẫn tạo hồ sơ mới”.</div><% } %>
+<form method="post" action="<%= typeof editing !== 'undefined' && editing ? '/students/' + s.id : '/students' %>" class="card stack" id="main-form"><%- include('partials/csrf') %>
+  <% if (dups && dups.length) { %><input type="hidden" name="confirm_dup" value="1"><% } %>
+  <div class="row">
+    <div class="field" style="flex:2 1 260px"><label>Họ tên học sinh *</label><input name="full_name" required value="<%= s.full_name || '' %>"></div>
+    <div class="field"><label>Ngày sinh</label><input name="dob" value="<%= s.dob || '' %>" placeholder="dd/mm/yyyy"></div>
+    <div class="field" style="flex:0 1 120px"><label>Giới tính</label><select name="gender"><option value=""></option><% for (const g of ['Nam', 'Nữ']) { %><option <%= s.gender === g ? 'selected' : '' %>><%= g %></option><% } %></select></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Họ tên phụ huynh</label><input name="parent_name" value="<%= s.parent_name || '' %>"></div>
+    <div class="field"><label>SĐT phụ huynh</label><input type="tel" name="parent_phone" value="<%= s.parent_phone || '' %>" placeholder="09xxxxxxxx"><span class="hint">Anh chị em có thể dùng chung số – mỗi em vẫn có hồ sơ và mã riêng.</span></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Trình độ đầu vào</label><input name="entry_level" value="<%= s.entry_level || '' %>" placeholder="VD: A1, mất gốc, điểm test 6.5"></div>
+    <div class="field"><label>Địa chỉ</label><input name="address" value="<%= s.address || '' %>"></div>
+  </div>
+  <div class="field"><label>Ghi chú</label><textarea name="note"><%= s.note || '' %></textarea></div>
+  <% if (typeof editing !== 'undefined' && editing) { %><div class="field" style="max-width:260px"><label>Trạng thái hồ sơ</label><select name="status"><option value="active" <%= s.status !== 'inactive' ? 'selected' : '' %>>Đang theo dõi</option><option value="inactive" <%= s.status === 'inactive' ? 'selected' : '' %>>Ngừng theo dõi</option></select></div><% } %>
+  <div class="actions">
+    <% if (typeof editing !== 'undefined' && editing) { %><button class="btn primary">Lưu</button>
+    <% } else { %><button class="btn primary" name="then" value="enroll"><%= dups && dups.length ? 'Vẫn tạo hồ sơ mới & xếp lớp' : 'Lưu & xếp lớp ngay' %></button><button class="btn" name="then" value="view"><%= dups && dups.length ? 'Vẫn tạo hồ sơ mới' : 'Chỉ lưu hồ sơ' %></button><% } %>
+  </div>
+</form>

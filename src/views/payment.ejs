@@ -1,0 +1,30 @@
+<div class="page-head"><div><h1>Thu tiền: <a href="/students/<%= s.id %>"><%= s.full_name %></a></h1><div class="muted"><%= s.code %> · PH <%= s.parent_name || '' %> <%= s.parent_phone || '' %><%= credit.free ? ' · Tiền trả trước: ' + vnd(credit.free) : '' %></div></div></div>
+<div class="grid g2">
+<form method="post" action="/payments" class="card stack"><%- include('partials/csrf') %>
+  <input type="hidden" name="idempotency_key" value="<%= newKey() %>"><input type="hidden" name="student_id" value="<%= s.id %>">
+  <% if (inv) { %>
+    <input type="hidden" name="invoice_id" value="<%= inv.id %>">
+    <h2>Thu vào khoản <%= inv.code %></h2>
+    <div class="calc"><strong><%= inv.class_name || inv.description %> · <%= inv.period_label %></strong>
+      <ul class="list-plain"><li><span>Phải thu</span><strong><%= vnd(inv.amount) %></strong></li><li><span>Đã thanh toán</span><strong><%= vnd(inv.paid) %></strong></li><li><span>Còn nợ</span><strong class="big-total"><%= vnd(inv.due) %></strong></li></ul></div>
+  <% } else if (!deposit && open.length) { %>
+    <h2>Chọn khoản cần thu</h2>
+    <ul class="list-plain"><% for (const i of open) { %><li><span><%= i.class_name || i.description %> · <%= i.period_label %> · hạn <%= dmy(i.due_date) %></span><a class="btn sm primary" href="/payments/new?invoice_id=<%= i.id %>">Thu <%= vnd(i.due) %></a></li><% } %></ul>
+    <p class="hint">Hoặc nhận tiền đặt cọc / trả trước (chưa gắn khoản nào) bên dưới.</p>
+    <h2>Đặt cọc / trả trước</h2>
+  <% } else { %><h2>Đặt cọc / trả trước</h2><p class="hint">Tiền vào sổ trả trước của học sinh và tự trừ vào học phí khi xếp lớp hoặc khi tạo khoản phải thu mới. Mỗi đồng chỉ dùng một lần.</p><% } %>
+  <div class="row">
+    <div class="field"><label>Số tiền nhận *</label><input name="amount" data-money required value="<%= inv ? M.num(inv.due) : '' %>" inputmode="numeric"></div>
+    <div class="field"><label>Ngày thu</label><input name="paid_date" value="<%= dmy(today) %>"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Hình thức</label><select name="method"><% for (const [k, v] of Object.entries(METHODS)) { %><option value="<%= k %>"><%= v %></option><% } %></select></div>
+    <div class="field"><label>Người nộp</label><input name="payer_name" value="<%= s.parent_name || '' %>"></div>
+  </div>
+  <div class="field"><label>Ghi chú</label><input name="note"></div>
+  <% if (inv) { %><label class="check"><input type="checkbox" name="excess_to_credit" value="1"> Nếu số tiền nhận lớn hơn số còn nợ: chuyển phần dư thành tiền trả trước</label><% } %>
+  <button class="btn primary">Xác nhận đã nhận tiền & tạo phiếu thu</button>
+  <p class="hint">Mỗi lần nhận tiền tạo một phiếu thu riêng. Bấm nhiều lần không tạo phiếu trùng.</p>
+</form>
+<% if (!inv && open.length) { %><div class="card"><h2>Công nợ của học sinh</h2><ul class="list-plain small"><% for (const i of open) { %><li><span><%= i.code %> · <%= i.period_label %></span><strong><%= vnd(i.due) %></strong></li><% } %></ul></div><% } %>
+</div>

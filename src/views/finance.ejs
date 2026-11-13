@@ -1,0 +1,21 @@
+<div class="page-head"><div><h1>Học phí & công nợ</h1></div>
+  <div class="actions"><a class="btn primary" href="/billing/bulk">Tạo học phí kỳ tiếp theo</a><a class="btn" href="/receipts">Phiếu thu</a><a class="btn" href="/cashbook">Thu chi</a><% if (can.viewReports) { %><a class="btn" href="/reports/export/debts.xlsx">Xuất công nợ</a><% } %></div></div>
+<div class="tabs"><% for (const [k, v] of Object.entries({ open: 'Còn nợ', overdue: 'Quá hạn', paid: 'Đã đủ', all: 'Tất cả' })) { %><a class="<%= status === k ? 'active' : '' %>" href="?status=<%= k %>"><%= v %></a><% } %></div>
+<form class="card row" method="get"><input type="hidden" name="status" value="<%= status %>">
+  <div class="field" style="flex:2 1 240px"><label>Tìm học sinh</label><input type="search" name="q" value="<%= query.q || '' %>" placeholder="Tên, mã HS, SĐT"></div>
+  <div class="field"><label>Lớp</label><select name="class_id"><option value="">Tất cả</option><% for (const c of classes) { %><option value="<%= c.id %>" <%= String(query.class_id) === String(c.id) ? 'selected' : '' %>><%= c.name %></option><% } %></select></div>
+  <button class="btn">Lọc</button></form>
+<div class="grid g3 stats" style="margin-bottom:16px">
+  <div class="stat"><div class="label">Số phải thu</div><div class="value"><%= vnd(totals.amount) %></div></div>
+  <div class="stat ok"><div class="label">Đã thanh toán</div><div class="value"><%= vnd(totals.paid) %></div></div>
+  <div class="stat bad"><div class="label">Còn nợ</div><div class="value"><%= vnd(totals.due) %></div></div>
+</div>
+<div class="card table-wrap"><table class="responsive"><thead><tr><th>Học sinh</th><th>Khoản</th><th class="num">Phải thu</th><th class="num">Đã đóng</th><th class="num">Còn nợ</th><th>Hạn</th><th></th></tr></thead><tbody>
+<% for (const i of list) { %><tr>
+  <td data-l="HS"><a href="/students/<%= i.student_id %>"><%= i.student_name %></a> <span class="small muted"><%= i.student_code %></span></td>
+  <td data-l="Khoản"><a href="/invoices/<%= i.id %>"><%= i.class_name || i.description %> · <%= i.period_label %></a></td>
+  <td class="num" data-l="Phải thu"><%= vnd(i.amount) %></td><td class="num" data-l="Đã đóng"><%= vnd(i.paid) %></td><td class="num" data-l="Còn nợ"><strong><%= vnd(i.due) %></strong></td>
+  <td data-l="Hạn"><span class="<%= i.due > 0 && i.due_date < today ? 'badge bad' : '' %>"><%= dmy(i.due_date) %></span></td>
+  <td class="right"><% if (i.due > 0) { %><a class="btn sm primary" href="/payments/new?invoice_id=<%= i.id %>">Thu</a> <a class="btn sm" href="/messages/compose?type=fee&student_id=<%= i.student_id %>&invoice_id=<%= i.id %>">Nhắc</a><% } %></td></tr><% } %>
+<% if (!list.length) { %><tr><td colspan="7" class="muted">Không có khoản nào.</td></tr><% } %></tbody></table></div>
+<p class="hint">Phải thu = học phí sau miễn giảm/điều chỉnh. Còn nợ = phải thu − đã thanh toán. Tiền đặt cọc/trả trước chưa phân bổ không tính vào cột Đã đóng – xem trong hồ sơ học sinh.</p>

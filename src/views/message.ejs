@@ -1,0 +1,19 @@
+<div class="page-head"><div><h1>Soạn tin cho phụ huynh</h1><div class="muted"><%= msg.student.full_name %> · Phụ huynh: <%= msg.student.parent_name || '—' %> · <%= msg.student.parent_phone || 'chưa có SĐT' %></div></div></div>
+<div class="tabs"><% for (const [k, v] of Object.entries(TEMPLATES)) { if (k === 'fee' && isTeacher) continue; %><a class="<%= msg.type === k ? 'active' : '' %>" href="?type=<%= k %>&student_id=<%= msg.student.id %><%= q.class_id ? '&class_id=' + q.class_id : '' %><%= q.session_id ? '&session_id=' + q.session_id : '' %>"><%= v %></a><% } %></div>
+<div class="grid g2">
+<form method="post" action="/messages/log" class="card stack"><%- include('partials/csrf') %>
+  <input type="hidden" name="student_id" value="<%= msg.student.id %>"><input type="hidden" name="template" value="<%= msg.type %>">
+  <div class="field"><label>Nội dung (có thể sửa trước khi gửi)</label><textarea id="msg" name="content" class="msg-box"><%= msg.text %></textarea></div>
+  <div class="actions">
+    <button type="button" class="btn primary" data-copy="msg">Sao chép nội dung</button>
+    <% if (zalo) { %><a class="btn" href="<%= zalo %>" target="_blank" rel="noopener">Mở Zalo <%= msg.student.parent_phone %></a><% } %>
+  </div>
+  <div class="row">
+    <div class="field"><label>Kênh đã dùng</label><select name="channel"><option value="zalo">Zalo</option><option value="phone">Gọi điện</option><option value="sms">SMS</option><option value="direct">Gặp trực tiếp</option></select></div>
+    <div class="field"><label>Ghi chú</label><input name="note" placeholder="VD: PH hẹn đóng thứ 6"></div>
+  </div>
+  <button class="btn ok">Đánh dấu đã liên hệ</button>
+  <p class="hint">Ứng dụng không tự gửi tin. Hãy sao chép, gửi qua Zalo, sau đó bấm “Đánh dấu đã liên hệ” để lưu lịch sử.</p>
+</form>
+<div class="card"><h2>Mẫu nội dung</h2><p class="hint">Sửa mẫu tại Cài đặt → Mẫu tin nhắn. Các biến như {hoc_sinh}, {lop}, {so_tien_con_no} được tự điền.</p></div>
+</div>

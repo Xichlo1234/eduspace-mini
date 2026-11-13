@@ -1,0 +1,7 @@
+<div class="page-head"><div><h1>Phiếu thu</h1></div><% if (can.viewReports) { %><a class="btn" href="/reports/export/receipts.xlsx?from=<%= from %>&to=<%= to %>">Xuất Excel</a><% } %></div>
+<form class="card row" method="get"><div class="field"><label>Từ ngày</label><input name="from" value="<%= dmy(from) %>"></div><div class="field"><label>Đến ngày</label><input name="to" value="<%= dmy(to) %>"></div><button class="btn">Xem</button></form>
+<div class="card table-wrap"><table class="responsive"><thead><tr><th>Mã</th><th>Ngày</th><th>Học sinh</th><th>Nội dung</th><th>Hình thức</th><th>Người thu</th><th class="num">Số tiền</th></tr></thead><tbody>
+<% for (const r of list) { %><tr class="<%= r.status === 'void' ? 'void' : '' %>"><td data-l="Mã"><a href="/receipts/<%= r.id %>"><%= r.code %></a></td><td data-l="Ngày"><%= dmy(r.paid_date) %></td>
+  <td data-l="HS"><a href="/students/<%= r.student_id %>"><%= r.student_name %></a></td><td data-l="Nội dung"><%= r.class_name || '' %> <%= r.period_label %></td><td data-l="HT"><%= METHODS[r.method] %></td><td data-l="Người thu"><%= r.collector_name %></td><td class="num" data-l="Số tiền"><%= vnd(r.amount) %></td></tr><% } %>
+<% if (!list.length) { %><tr><td colspan="7" class="muted">Không có phiếu thu trong khoảng này.</td></tr><% } %></tbody>
+<tfoot><tr><td colspan="6">Tổng phiếu hợp lệ</td><td class="num"><%= vnd(total) %></td></tr></tfoot></table></div>

@@ -1,0 +1,20 @@
+<div class="page-head"><div><h1>Quay lại sau bảo lưu: <a href="/students/<%= rv.student_id %>"><%= rv.student_name %></a></h1>
+<div class="muted">Bảo lưu lớp <%= rv.class_name %> từ <%= dmy(rv.start_date) %> · Giá trị giữ: <strong><%= vnd(rv.held) %></strong><%= rv.credit_sessions ? ` (${rv.credit_sessions} buổi)` : '' %> · Lý do: <%= rv.reason %></div></div></div>
+<%- include('partials/form_error') %>
+<form method="post" class="card stack" id="main-form"><%- include('partials/csrf') %>
+  <div class="row">
+    <div class="field" style="flex:2 1 260px"><label>Lớp học khi quay lại</label><select name="class_id"><% for (const c of classes) { %><option value="<%= c.id %>" <%= String(v.class_id) === String(c.id) ? 'selected' : '' %>><%= c.name %> · <%= vnd(c.fee_amount) %> · <%= c.active_count %> HS</option><% } %></select></div>
+    <div class="field"><label>Ngày bắt đầu học lại</label><input name="start_date" value="<%= v.start_date %>"></div>
+  </div>
+  <label class="check"><input type="checkbox" name="force" value="1"> Vẫn xếp nếu lớp đã đủ sĩ số</label>
+  <% if (preview) { const n = preview.neu; %>
+  <div class="calc"><ul><% for (const l of n.calc.lines) { %><li><%= l %></li><% } %></ul>
+  <ul class="list-plain">
+    <li><span>Học phí kỳ đầu (<%= n.invoice.period_label %>)</span><strong><%= vnd(n.invoice.amount) %></strong></li>
+    <li><span>Trừ giá trị bảo lưu / tiền trả trước</span><strong>−<%= vnd(n.applied) %></strong></li>
+    <li><span>Cần đóng thêm</span><strong class="big-total"><%= vnd(n.invoice.due) %></strong></li>
+    <li><span>Còn dư (tiền trả trước)</span><strong><%= vnd(n.credit.free) %></strong></li>
+  </ul></div>
+  <div class="actions"><button class="btn primary" name="action" value="confirm">Xác nhận quay lại học</button><button class="btn" name="action" value="preview">Tính lại</button></div>
+  <% } else { %><button class="btn primary" name="action" value="preview">Xem bảng tính</button><% } %>
+</form>

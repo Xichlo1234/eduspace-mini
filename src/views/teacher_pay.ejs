@@ -1,0 +1,13 @@
+<div class="page-head"><div><h1>Tiền dạy giáo viên tháng <%= D.displayMonth(ym) %></h1><div class="muted">Chỉ tính các buổi đã được xác nhận hoàn thành, theo giáo viên thực tế đứng lớp (kể cả dạy thay).</div></div>
+<div class="actions"><form method="get" class="actions"><input type="month" name="ym" value="<%= ym %>"><button class="btn">Xem</button></form><a class="btn" href="/teachers/pay.xlsx?ym=<%= ym %>">Xuất Excel chi tiết</a></div></div>
+<div class="card table-wrap"><table class="responsive"><thead><tr><th>Giáo viên</th><th class="num">Buổi đã dạy</th><th class="num">Dạy thay</th><th class="num">Thành tiền</th><th>Chưa xác nhận</th><th>Chi tiền</th></tr></thead><tbody>
+<% for (const r of rows) { %><tr><td data-l="GV"><a href="/teachers/<%= r.teacher.id %>?ym=<%= ym %>"><%= r.teacher.full_name %></a></td><td class="num" data-l="Buổi"><%= r.sessions %></td><td class="num" data-l="Dạy thay"><%= r.substitute %></td>
+  <td class="num" data-l="Thành tiền"><strong><%= vnd(r.amount) %></strong></td>
+  <td data-l="Chưa xác nhận"><%= r.scheduledNotDone ? r.scheduledNotDone + ' buổi đã lên lịch – chưa tính' : '' %></td>
+  <td data-l="Chi tiền"><% if (r.payout) { %><span class="badge ok">Đã chi <%= vnd(r.payout.amount) %> (<%= r.payout.code %>, <%= dmy(r.payout.date) %>)</span><%= r.mismatch ? ' ' : '' %><% if (r.mismatch) { %><span class="badge warn">Lệch <%= vnd(-r.mismatch) %> so với số buổi hiện tại</span><% } %>
+  <% } else if (r.amount > 0 && can.payTeachers) { %><form method="post" action="/teachers/<%= r.teacher.id %>/pay" class="actions" data-confirm="Xác nhận chi <%= vnd(r.amount) %> cho <%= r.teacher.full_name %>?"><%- include('partials/csrf') %>
+    <input type="hidden" name="ym" value="<%= ym %>"><input type="hidden" name="idempotency_key" value="<%= newKey() %>">
+    <select name="method" style="width:auto"><option value="cash">Tiền mặt</option><option value="transfer">Chuyển khoản</option></select><button class="btn sm primary">Xác nhận chi</button></form>
+  <% } else if (r.amount > 0) { %><span class="muted small">Chờ chủ trung tâm xác nhận</span><% } %></td></tr><% } %>
+</tbody><tfoot><tr><td>Tổng</td><td class="num"><%= rows.reduce((a, r) => a + r.sessions, 0) %></td><td></td><td class="num"><%= vnd(rows.reduce((a, r) => a + r.amount, 0)) %></td><td colspan="2"></td></tr></tfoot></table></div>
+<p class="hint">Mỗi giáo viên mỗi tháng chỉ có một giao dịch chi. Nếu cần chi lại, hủy giao dịch cũ ở mục Thu chi rồi xác nhận lại.</p>

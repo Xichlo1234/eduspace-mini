@@ -1,0 +1,5 @@
+<div class="page-head"><h1>Nhật ký thao tác</h1></div>
+<%- include('partials/settings_tabs') %>
+<div class="card table-wrap"><table class="responsive"><thead><tr><th>Thời điểm</th><th>Người</th><th>Thao tác</th><th>Đối tượng</th><th>Lý do</th><th>Chi tiết</th></tr></thead><tbody>
+<% for (const a of list) { %><tr><td data-l="Lúc" class="nowrap"><%= D.displayDateTime(a.created_at) %></td><td data-l="Người"><%= a.user_name || 'hệ thống' %></td><td data-l="Thao tác"><%= a.action %></td><td data-l="Đối tượng"><%= a.entity %> <%= a.entity_id || '' %></td><td data-l="Lý do"><%= a.reason || '' %></td><td data-l="Chi tiết" class="small" style="max-width:360px;word-break:break-word"><%= a.data || '' %></td></tr><% } %>
+</tbody></table></div>

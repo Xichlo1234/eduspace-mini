@@ -1,0 +1,17 @@
+<div class="page-head"><div><h1>Nghỉ học: <a href="/students/<%= e.student_id %>"><%= e.student_name %></a></h1><div class="muted"><%= e.class_name || e.subject_name || 'Danh sách chờ' %> · <%= e.status %></div></div></div>
+<%- include('partials/form_error') %>
+<form method="post" class="card stack" id="main-form"><%- include('partials/csrf') %>
+  <% if (e.status === 'active') { %>
+  <div class="field" style="max-width:260px"><label>Nghỉ từ ngày</label><input name="date" value="<%= v.date %>"></div>
+  <fieldset><legend>Học phí</legend>
+    <label class="check"><input type="radio" name="settle" value="1" <%= v.settle !== '0' ? 'checked' : '' %>> Tính lại theo phần đã học (phần đã đóng chưa dùng vào tiền trả trước – có thể hoàn sau)</label>
+    <label class="check"><input type="radio" name="settle" value="0" <%= v.settle === '0' ? 'checked' : '' %>> Giữ nguyên học phí đã phát sinh (không hoàn theo chính sách)</label>
+  </fieldset>
+  <% } %>
+  <div class="field"><label>Lý do *</label><input name="reason" required value="<%= v.reason || '' %>"></div>
+  <% if (preview) { %>
+    <% if (preview.settle) { %><%- include('partials/statement', { st: preview.settle }) %><% } %>
+    <div class="calc">Tiền trả trước của học sinh sau khi nghỉ: <strong><%= vnd(preview.credit.free) %></strong>. Hồ sơ, điểm danh và lịch sử thu tiền được giữ nguyên.</div>
+    <div class="actions"><button class="btn danger" name="action" value="confirm">Xác nhận nghỉ học</button><button class="btn" name="action" value="preview">Tính lại</button></div>
+  <% } else { %><button class="btn primary" name="action" value="preview">Xem bảng tính</button><% } %>
+</form>

@@ -1,0 +1,54 @@
+<div class="page-head">
+  <div><h1><%= c.name %> <% if (c.status !== 'active') { %><span class="badge"><%= { finished: 'Đã kết thúc', cancelled: 'Đã hủy' }[c.status] %></span><% } %></h1>
+  <div class="muted"><%= c.subject_name || '' %> · GV: <%= c.teacher_name || '—' %> · <%= c.room_name || 'Chưa có phòng' %> · Bắt đầu <%= dmy(c.start_date) %><%= c.end_date ? ' – kết thúc ' + dmy(c.end_date) : '' %></div>
+  <div class="small">Lịch: <strong><%= current.map((s) => D.WEEKDAY_SHORT[s.weekday] + ' ' + s.start_time + '–' + s.end_time).join(', ') || '—' %></strong></div></div>
+  <% if (isOp) { %><div class="actions"><a class="btn" href="/classes/<%= c.id %>/edit">Sửa lớp</a><a class="btn" href="/classes/<%= c.id %>/schedule">Đổi lịch lặp</a></div><% } %>
+</div>
+<% if (conflicts.length) { %><div class="alert warn"><strong>Có <%= conflicts.length %> buổi sắp tới trùng giờ giáo viên/phòng:</strong> <%= conflicts.slice(0, 5).map((x) => dmy(x.date) + ' ' + x.start_time + ' với ' + x.other_class + ' (' + x.by + ')').join('; ') %></div><% } %>
+
+<div class="grid g4 stats" style="margin-bottom:16px">
+  <div class="stat"><div class="label">Học phí</div><div class="value small"><%= FEE_TYPES[c.fee_type] %></div><% if (isOp) { %><div class="small"><%= vnd(c.fee_amount) %><%= c.fee_type === 'package' ? '/buổi · gói ' + c.package_sessions + ' buổi' : c.fee_type === 'monthly' ? '/tháng' : '/khóa ' + c.total_sessions + ' buổi' %></div><% } %></div>
+  <div class="stat"><div class="label">Sĩ số đang học</div><div class="value"><%= roster.filter((e) => e.status === 'active').length %><%= c.max_students ? '/' + c.max_students : '' %></div></div>
+  <div class="stat"><div class="label">Buổi đã dạy</div><div class="value"><%= stats.done || 0 %>/<%= c.total_sessions || (stats.total - (stats.cancelled || 0)) %></div></div>
+  <div class="stat"><div class="label">Buổi đã hủy</div><div class="value"><%= stats.cancelled || 0 %></div></div>
+</div>
+
+<div class="card"><h2>Học sinh <% if (isOp) { %><a class="btn sm primary" href="/students?enroll_class=<%= c.id %>">+ Xếp học sinh</a><% } %></h2>
+<div class="table-wrap"><table class="responsive"><thead><tr><th>Học sinh</th><th>Trạng thái</th><th>Từ – đến</th><% if (c.fee_type === 'package') { %><th>Gói buổi</th><% } %><% if (isOp) { %><th class="num">Còn nợ</th><% } %><th></th></tr></thead><tbody>
+<% for (const e of roster) { %><tr><td data-l="HS"><a href="/students/<%= e.student_id %>"><%= e.full_name %></a> <span class="muted small"><%= e.code %></span></td>
+  <td data-l="Trạng thái"><span class="badge <%= { active: 'ok', reserved: 'warn', dropped: 'bad' }[e.status] || '' %>"><%= STATUS[e.status] %></span></td>
+  <td data-l="Thời gian"><%= dmy(e.start_date) %> → <%= dmy(e.end_date) %></td>
+  <% if (c.fee_type === 'package') { %><td data-l="Gói"><% if (e.usage) { %>còn <strong><%= e.usage.remaining %></strong>/<%= e.usage.purchased %><% } %></td><% } %>
+  <% if (isOp) { %><td class="num" data-l="Còn nợ"><%= e.due ? vnd(e.due) : '—' %></td><% } %>
+  <td class="right"><a class="btn sm" href="/messages/compose?type=review&student_id=<%= e.student_id %>&class_id=<%= c.id %>">Nhắn PH</a></td></tr><% } %>
+<% if (!roster.length) { %><tr><td colspan="6" class="muted">Chưa có học sinh. Mở hồ sơ học sinh → “Xếp lớp”.</td></tr><% } %></tbody></table></div>
+<% if (isOp && waiting.length) { %><h3>Danh sách chờ phù hợp</h3><ul class="list-plain small"><% for (const w of waiting) { %><li><span><%= w.full_name %> · <%= w.subject_name || '' %> <%= w.note || '' %></span><a class="btn sm" href="/students/<%= w.student_id %>/enroll?enrollment_id=<%= w.id %>&class_id=<%= c.id %>">Xếp vào lớp này</a></li><% } %></ul><% } %>
+</div>
+
+<div class="card"><h2>Buổi học <a class="small" href="?all=1">Xem cả buổi cũ</a></h2>
+<div class="table-wrap"><table class="responsive"><thead><tr><th>Ngày</th><th>Giờ</th><th>Giáo viên</th><th>Trạng thái</th><th>Có mặt</th><th></th></tr></thead><tbody>
+<% for (const s of sessions) { %><tr class="<%= s.status === 'cancelled' ? 'void' : '' %>">
+  <td data-l="Ngày"><%= D.WEEKDAY_SHORT[D.weekday(s.date)] %> <%= dmy(s.date) %><%= s.is_makeup ? ' (bù/bổ sung)' : '' %></td><td data-l="Giờ"><%= s.start_time %>–<%= s.end_time %></td>
+  <td data-l="GV"><%= s.teacher_name || '—' %><%= s.teacher_id !== c.teacher_id ? ' (thay)' : '' %></td>
+  <td data-l="Trạng thái"><span class="badge <%= s.status === 'completed' ? 'ok' : s.status === 'scheduled' && s.date < today ? 'warn' : '' %>"><%= s.status === 'scheduled' && s.date < today ? 'Chưa điểm danh' : SSTATUS[s.status] %></span><%= s.cancel_reason ? ' ' + s.cancel_reason : '' %></td>
+  <td data-l="Có mặt"><%= s.status === 'completed' ? s.present_count + '/' + s.roster_count : '' %></td>
+  <td class="right"><a class="btn sm <%= s.status === 'scheduled' && s.date <= today ? 'primary' : '' %>" href="/sessions/<%= s.id %>"><%= s.date <= today && s.status !== 'cancelled' ? 'Điểm danh' : 'Mở' %></a></td></tr><% } %>
+</tbody></table></div>
+<% if (isOp && c.status === 'active') { %>
+<details class="box"><summary>Thêm buổi học bổ sung</summary>
+<form method="post" action="/classes/<%= c.id %>/sessions" class="row" style="margin-top:8px"><%- include('partials/csrf') %>
+  <div class="field"><label>Ngày</label><input name="date" placeholder="dd/mm/yyyy" required></div><div class="field"><label>Bắt đầu</label><input type="time" name="start_time" required></div>
+  <div class="field"><label>Kết thúc</label><input type="time" name="end_time" required></div><div class="field"><label>Ghi chú</label><input name="note" placeholder="Buổi bổ sung"></div>
+  <label class="check"><input type="checkbox" name="force" value="1"> Vẫn lưu nếu trùng</label><button class="btn">Thêm buổi</button></form></details>
+<% } %>
+</div>
+
+<% if (isOp) { %>
+<details class="card"><summary>Lịch lặp & lịch sử thay đổi</summary>
+  <ul class="small"><% for (const s of slots) { %><li><%= D.WEEKDAY_NAMES[s.weekday] %> <%= s.start_time %>–<%= s.end_time %>: từ <%= dmy(s.effective_from) %><%= s.effective_to ? ' đến ' + dmy(s.effective_to) : '' %></li><% } %></ul>
+  <ul class="list-plain small"><% for (const a of history) { %><li><span><%= D.displayDateTime(a.created_at) %> · <%= a.action %><%= a.reason ? ' · ' + a.reason : '' %></span><span class="muted"><%= a.user_name %></span></li><% } %></ul>
+  <% if (c.status === 'active') { %>
+  <form method="post" action="/classes/<%= c.id %>/status" class="row" data-confirm="Kết thúc lớp? Các buổi chưa diễn ra sẽ bị bỏ."><%- include('partials/csrf') %><input type="hidden" name="status" value="finished"><button class="btn danger">Kết thúc lớp</button></form>
+  <% } else { %><form method="post" action="/classes/<%= c.id %>/status"><%- include('partials/csrf') %><input type="hidden" name="status" value="active"><button class="btn">Mở lại lớp</button></form><% } %>
+</details>
+<% } %>

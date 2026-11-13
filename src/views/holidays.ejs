@@ -1,0 +1,11 @@
+<div class="page-head"><h1>Ngày nghỉ, ngày lễ</h1></div>
+<%- include('partials/settings_tabs') %>
+<div class="grid g2">
+<form method="post" action="/settings/holidays" class="card stack"><%- include('partials/csrf') %><h2>Thêm ngày nghỉ</h2>
+  <div class="row"><div class="field"><label>Ngày</label><input name="date" required placeholder="dd/mm/yyyy"></div><div class="field" style="flex:2 1 200px"><label>Tên</label><input name="name" placeholder="VD: Quốc khánh"></div></div>
+  <p class="hint">Không tạo buổi học vào ngày nghỉ. Nếu đã có buổi lên lịch (chưa điểm danh) vào ngày này, buổi sẽ được hủy; lớp theo khóa tự thêm buổi bù để đủ số buổi.</p>
+  <button class="btn primary">Thêm ngày nghỉ</button></form>
+<div class="card"><h2>Danh sách (<%= list.length %>)</h2><ul class="list-plain"><% for (const h of list) { %><li><span><%= D.WEEKDAY_SHORT[D.weekday(h.date)] %> <%= dmy(h.date) %> · <%= h.name %></span>
+  <form method="post" action="/settings/holidays/<%= h.id %>/delete" data-confirm="Xóa ngày nghỉ này?"><%- include('partials/csrf') %><button class="btn sm">Xóa</button></form></li><% } %>
+<% if (!list.length) { %><li class="muted">Chưa có ngày nghỉ.</li><% } %></ul></div>
+</div>

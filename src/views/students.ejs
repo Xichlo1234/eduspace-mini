@@ -1,0 +1,20 @@
+<div class="page-head"><div><h1>Học sinh</h1><div class="muted"><%= list.length %> hồ sơ</div></div>
+  <div class="actions"><a class="btn primary" href="/students/new">+ Thêm học sinh</a><a class="btn" href="/students/import">Nhập từ Excel</a><a class="btn" href="/students/export.xlsx">Xuất Excel</a><a class="btn" href="/waiting">Danh sách chờ</a></div></div>
+<form class="card row" method="get">
+  <div class="field" style="flex:2 1 240px"><label>Tìm kiếm</label><input type="search" name="q" value="<%= query.q || '' %>" placeholder="Tên, mã HS, SĐT phụ huynh"></div>
+  <div class="field"><label>Lớp</label><select name="class_id"><option value="">Tất cả</option><% for (const c of classes) { %><option value="<%= c.id %>" <%= String(query.class_id) === String(c.id) ? 'selected' : '' %>><%= c.name %></option><% } %></select></div>
+  <div class="field"><label>Trạng thái</label><select name="status">
+    <% for (const [k, v] of Object.entries({ active: 'Đang theo dõi', waiting: 'Có đăng ký chờ xếp lớp', reserved: 'Đang bảo lưu', inactive: 'Ngừng theo dõi', all: 'Tất cả' })) { %><option value="<%= k %>" <%= status === k ? 'selected' : '' %>><%= v %></option><% } %></select></div>
+  <button class="btn">Lọc</button>
+</form>
+<div class="card table-wrap"><table class="responsive">
+  <thead><tr><th>Mã</th><th>Họ tên</th><th>Ngày sinh</th><th>Phụ huynh</th><th>Lớp đang học</th><th></th></tr></thead>
+  <tbody>
+  <% for (const s of list) { %><tr>
+    <td data-l="Mã"><%= s.code %></td><td data-l="Họ tên"><a href="/students/<%= s.id %>"><strong><%= s.full_name %></strong></a>
+      <% if (s.waiting_count) { %> <span class="badge info">chờ lớp</span><% } %><% if (s.reserved_count) { %> <span class="badge warn">bảo lưu</span><% } %></td>
+    <td data-l="Ngày sinh"><%= dmy(s.dob) %></td><td data-l="Phụ huynh"><%= s.parent_name %> <span class="muted"><%= s.parent_phone %></span></td>
+    <td data-l="Lớp"><%= s.active_classes || '—' %></td>
+    <td class="right"><a class="btn sm <%= query.enroll_class ? 'primary' : '' %>" href="/students/<%= s.id %>/enroll<%= query.enroll_class ? '?class_id=' + encodeURIComponent(query.enroll_class) : '' %>">Xếp lớp</a> <a class="btn sm" href="/payments/new?student_id=<%= s.id %>">Thu tiền</a></td></tr><% } %>
+  <% if (!list.length) { %><tr><td colspan="6" class="muted">Không có học sinh phù hợp.</td></tr><% } %>
+  </tbody></table></div>

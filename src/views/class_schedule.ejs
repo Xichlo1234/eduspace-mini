@@ -1,0 +1,10 @@
+<div class="page-head"><div><h1>Đổi lịch lặp: <a href="/classes/<%= c.id %>"><%= c.name %></a></h1></div></div>
+<%- include('partials/form_error') %>
+<form method="post" class="card stack" id="main-form"><%- include('partials/csrf') %>
+  <div class="row"><div class="field" style="max-width:260px"><label>Áp dụng từ ngày</label><input name="effective_from" value="<%= v.effective_from %>"></div>
+  <div class="field"><label>Lý do</label><input name="reason" value="<%= v.reason || '' %>"></div></div>
+  <h3>Lịch mới</h3>
+  <%- include('partials/slots', { slots }) %>
+  <div class="alert info">Từ ngày áp dụng: các buổi <strong>chưa dạy và chưa điểm danh</strong> theo lịch cũ được thay bằng lịch mới. Buổi đã hoàn thành hoặc đã điểm danh giữ nguyên.</div>
+  <button class="btn primary">Áp dụng lịch mới</button>
+</form>

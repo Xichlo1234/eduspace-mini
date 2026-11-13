@@ -1,0 +1,43 @@
+<div class="page-head"><div><h1>Xếp lớp: <a href="/students/<%= s.id %>"><%= s.full_name %></a></h1><div class="muted"><%= s.code %><%= credit.free ? ' · Tiền trả trước/đặt cọc: ' + vnd(credit.free) : '' %></div></div></div>
+<%- include('partials/form_error') %>
+<form method="post" action="/students/<%= s.id %>/enroll" class="card stack" id="main-form"><%- include('partials/csrf') %>
+  <% if (v.enrollment_id) { %><input type="hidden" name="enrollment_id" value="<%= v.enrollment_id %>"><% } %>
+  <% if (!v.enrollment_id) { %>
+  <div class="row"><label class="check"><input type="radio" name="mode" value="active" <%= v.mode !== 'waiting' ? 'checked' : '' %>> Xếp vào lớp ngay</label>
+    <label class="check"><input type="radio" name="mode" value="waiting" <%= v.mode === 'waiting' ? 'checked' : '' %>> Đưa vào danh sách chờ xếp lớp</label></div>
+  <% } else { %><input type="hidden" name="mode" value="active"><% } %>
+  <div class="field"><label>Lớp</label><select name="class_id"><option value="">– chọn lớp –</option>
+    <% for (const c of classes) { %><option value="<%= c.id %>" <%= String(v.class_id) === String(c.id) ? 'selected' : '' %>><%= c.name %> · <%= FEE_TYPES[c.fee_type] %> <%= vnd(c.fee_amount) %><%= c.fee_type === 'package' ? '/buổi' : c.fee_type === 'monthly' ? '/tháng' : '/khóa' %> · <%= c.active_count %><%= c.max_students ? '/' + c.max_students : '' %> HS</option><% } %></select></div>
+  <div data-mode="active" class="stack">
+    <div class="row">
+      <div class="field"><label>Ngày bắt đầu học</label><input name="start_date" value="<%= v.start_date %>" placeholder="dd/mm/yyyy"></div>
+      <% if (can.adjustMoney) { %>
+      <div class="field"><label>Miễn giảm (nếu có)</label><input name="discount" data-money value="<%= v.discount || '' %>" placeholder="0"></div>
+      <div class="field"><label>Lý do miễn giảm</label><input name="discount_reason" value="<%= v.discount_reason || '' %>"></div>
+      <% } %>
+    </div>
+    <label class="check"><input type="checkbox" name="force" value="1" <%= v.force ? 'checked' : '' %>> Vẫn xếp nếu lớp đã đủ sĩ số</label>
+  </div>
+  <div data-mode="waiting" class="row">
+    <div class="field"><label>Môn/chương trình mong muốn</label><select name="subject_id"><option value="">—</option><% for (const sj of subjects) { %><option value="<%= sj.id %>"><%= sj.name %></option><% } %></select></div>
+    <div class="field" style="flex:2 1 260px"><label>Ghi chú (khung giờ mong muốn…)</label><input name="note" value="<%= v.note || '' %>"></div>
+  </div>
+  <% if (preview) { %>
+  <div class="calc">
+    <h3 style="margin-top:0">Bảng tính học phí – <%= cls.name %></h3>
+    <% if (preview.calc) { %><ul><% for (const l of preview.calc.lines) { %><li><%= l %></li><% } %></ul><% } %>
+    <ul class="list-plain">
+      <li><span>Học phí kỳ đầu (<%= preview.invoice.period_label %>)</span><strong><%= vnd(preview.invoice.base_amount) %></strong></li>
+      <% if (preview.invoice.amount !== preview.invoice.base_amount) { %><li><span>Sau miễn giảm</span><strong><%= vnd(preview.invoice.amount) %></strong></li><% } %>
+      <li><span>Trừ tiền đặt cọc / trả trước</span><strong>−<%= vnd(preview.applied) %></strong></li>
+      <li><span>Còn phải đóng</span><strong class="big-total"><%= vnd(preview.invoice.due) %></strong></li>
+      <li><span>Tiền trả trước còn lại sau khi xếp lớp</span><strong><%= vnd(preview.credit.free) %></strong></li>
+      <li><span>Hạn đóng</span><strong><%= dmy(preview.invoice.due_date) %></strong></li>
+    </ul>
+  </div>
+  <div class="actions"><button class="btn primary" name="action" value="confirm">Xác nhận xếp lớp</button><button class="btn" name="action" value="preview">Tính lại</button></div>
+  <% } else { %>
+  <div class="actions"><button class="btn primary" name="action" value="preview" data-mode="active">Xem bảng tính học phí</button><button class="btn primary" name="action" value="confirm" data-mode="waiting">Đưa vào danh sách chờ</button></div>
+  <% } %>
+</form>
+<% if (!v.enrollment_id) { %><p class="hint">Nhận đặt cọc trước khi xếp lớp: <a href="/payments/new?student_id=<%= s.id %>&deposit=1">Thu tiền đặt cọc</a>. Tiền cọc sẽ tự trừ vào học phí khi xếp lớp – chỉ dùng một lần.</p><% } %>

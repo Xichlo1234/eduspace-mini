@@ -1,0 +1,37 @@
+<div class="page-head"><h1>Cài đặt</h1></div>
+<%- include('partials/settings_tabs') %>
+<form method="post" action="/settings" enctype="multipart/form-data" class="stack"><input type="hidden" name="_csrf" value="<%= csrf %>">
+<div class="card stack"><h2>Thông tin trung tâm</h2>
+  <div class="row"><div class="field" style="flex:2 1 280px"><label>Tên trung tâm</label><input name="center_name" value="<%= s.center_name %>"></div><div class="field"><label>Điện thoại</label><input name="center_phone" value="<%= s.center_phone %>"></div></div>
+  <div class="row"><div class="field" style="flex:2 1 280px"><label>Địa chỉ</label><input name="center_address" value="<%= s.center_address %>"></div><div class="field"><label>Email</label><input name="center_email" value="<%= s.center_email %>"></div></div>
+  <div class="row"><div class="field"><label>Logo (PNG/JPG, ≤1MB)</label><input type="file" name="logo" accept="image/png,image/jpeg,image/webp"></div>
+  <% if (s.logo_path) { %><div class="field"><img src="/logo" alt="logo" style="height:56px;object-fit:contain"><label class="check"><input type="checkbox" name="remove_logo" value="1"> Bỏ logo</label></div><% } %></div>
+  <div class="field"><label>Thông tin chuyển khoản (hiện trong tin nhắc học phí)</label><input name="bank_info" value="<%= s.bank_info %>" placeholder="VD: Vietcombank 0123456789 – Nguyễn Văn A"></div>
+</div>
+<div class="card stack"><h2>Chính sách học phí & nhắc việc</h2>
+  <div class="field"><label>Chính sách học phí (ghi chú nội bộ / thông báo phụ huynh)</label><textarea name="tuition_policy"><%= s.tuition_policy %></textarea></div>
+  <div class="row">
+    <div class="field"><label>Làm tròn học phí tính theo tỷ lệ đến (đ)</label><select name="rounding_step"><% for (const v of ['1', '500', '1000', '5000', '10000']) { %><option value="<%= v %>" <%= s.rounding_step === v ? 'selected' : '' %>><%= vnd(Number(v)) %></option><% } %></select></div>
+    <div class="field"><label>Hạn đóng học phí tháng: ngày</label><input type="number" name="monthly_due_day" min="1" max="28" value="<%= s.monthly_due_day %>"></div>
+    <div class="field"><label>Hạn đóng khoản mới (sau n ngày)</label><input type="number" name="due_days" min="0" value="<%= s.due_days %>"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Cảnh báo sắp hết gói khi còn ≤ (buổi)</label><input type="number" name="package_low_threshold" min="0" value="<%= s.package_low_threshold %>"></div>
+    <div class="field"><label>Cảnh báo vắng nhiều: ≥ (buổi/30 ngày)</label><input type="number" name="absence_alert_count" min="1" value="<%= s.absence_alert_count %>"></div>
+    <div class="field"><label>Nhắc sắp hết bảo lưu trước (ngày)</label><input type="number" name="reservation_alert_days" min="0" value="<%= s.reservation_alert_days %>"></div>
+  </div>
+  <p class="hint">Hình thức học phí, mức phí và chính sách tính phí khi vắng được cấu hình riêng cho từng lớp.</p>
+</div>
+<div class="card stack"><h2>Mẫu phiếu thu</h2>
+  <div class="row"><div class="field"><label>Tiêu đề phiếu</label><input name="receipt_title" value="<%= s.receipt_title %>"></div></div>
+  <div class="field"><label>Dòng chân phiếu</label><input name="receipt_footer" value="<%= s.receipt_footer %>"></div>
+</div>
+<div class="card stack"><h2>Mẫu tin nhắn phụ huynh</h2>
+  <p class="hint">Biến tự điền: {hoc_sinh} {phu_huynh} {lop} {trung_tam} {sdt_trung_tam} {ngay} · Học phí: {ky} {so_tien_phai_thu} {so_tien_da_dong} {so_tien_con_no} {han_dong} {thong_tin_chuyen_khoan} · Vắng: {gio} {trang_thai_vang} · Đổi lịch: {noi_dung_thay_doi} · Nhận xét: {nhan_xet} {chuyen_can}</p>
+  <div class="field"><label>Nhắc học phí</label><textarea name="tpl_fee"><%= s.tpl_fee %></textarea></div>
+  <div class="field"><label>Thông báo vắng học</label><textarea name="tpl_absence"><%= s.tpl_absence %></textarea></div>
+  <div class="field"><label>Thay đổi lịch</label><textarea name="tpl_schedule"><%= s.tpl_schedule %></textarea></div>
+  <div class="field"><label>Nhận xét học tập</label><textarea name="tpl_review"><%= s.tpl_review %></textarea></div>
+</div>
+<button class="btn primary">Lưu cài đặt</button>
+</form>

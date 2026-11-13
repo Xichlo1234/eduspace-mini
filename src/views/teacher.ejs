@@ -1,0 +1,12 @@
+<div class="page-head"><div><h1><%= t.full_name %></h1><div class="muted"><%= t.phone %> <%= t.email %><%= showMoney ? ' · Đơn giá mặc định ' + vnd(t.default_rate) + '/buổi' : '' %></div></div>
+<% if (isOp) { %><a class="btn" href="/teachers/<%= t.id %>/edit">Sửa</a><% } %></div>
+<div class="grid g2">
+<div class="card"><h2>Lịch dạy 2 tuần tới</h2><ul class="list-plain small"><% for (const s of upcoming.filter((x) => x.status !== 'cancelled')) { %><li><span><%= D.WEEKDAY_SHORT[D.weekday(s.date)] %> <%= dmy(s.date) %> <%= s.start_time %>–<%= s.end_time %> · <a href="/classes/<%= s.class_id %>"><%= s.class_name %></a><%= s.teacher_id !== s.main_teacher_id ? ' (dạy thay)' : '' %></span><span class="muted"><%= s.room_name || '' %></span></li><% } %>
+<% if (!upcoming.length) { %><li class="muted">Không có.</li><% } %></ul></div>
+<div class="card"><h2>Lớp phụ trách</h2><ul class="list-plain"><% for (const c of classList) { %><li><a href="/classes/<%= c.id %>"><%= c.name %></a><span class="muted small"><%= c.active_count %> HS</span></li><% } %></ul></div>
+</div>
+<div class="card"><h2>Buổi đã dạy (đã xác nhận) tháng <%= D.displayMonth(ym) %> <form method="get" class="actions"><input type="month" name="ym" value="<%= ym %>"><button class="btn sm">Xem</button></form></h2>
+<div class="table-wrap"><table class="responsive"><thead><tr><th>Ngày</th><th>Lớp</th><th>Ghi chú</th><% if (showMoney) { %><th class="num">Đơn giá</th><% } %></tr></thead><tbody>
+<% for (const s of sessions) { %><tr><td data-l="Ngày"><%= dmy(s.date) %> <%= s.start_time %></td><td data-l="Lớp"><%= s.class_name %></td><td data-l="Ghi chú"><%= s.substitute ? 'Dạy thay ' + (s.main_teacher_name || '') : '' %></td><% if (showMoney) { %><td class="num" data-l="Đơn giá"><%= vnd(s.teacher_rate) %></td><% } %></tr><% } %>
+<% if (!sessions.length) { %><tr><td colspan="4" class="muted">Chưa có buổi nào được xác nhận.</td></tr><% } %></tbody>
+<% if (showMoney) { %><tfoot><tr><td colspan="3"><%= sessions.length %> buổi</td><td class="num"><%= vnd(sessions.reduce((a, s) => a + (s.teacher_rate || 0), 0)) %></td></tr></tfoot><% } %></table></div></div>

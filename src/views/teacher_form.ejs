@@ -1,0 +1,10 @@
+<div class="page-head"><h1><%= title %></h1></div>
+<%- include('partials/form_error') %>
+<form method="post" action="<%= t.id ? '/teachers/' + t.id : '/teachers' %>" class="card stack" style="max-width:640px"><%- include('partials/csrf') %>
+  <div class="field"><label>Họ tên *</label><input name="full_name" required value="<%= t.full_name || '' %>"></div>
+  <div class="row"><div class="field"><label>Điện thoại</label><input type="tel" name="phone" value="<%= t.phone || '' %>"></div><div class="field"><label>Email</label><input name="email" value="<%= t.email || '' %>"></div></div>
+  <div class="field"><label>Đơn giá tiền dạy mỗi buổi (đ)</label><input name="default_rate" data-money value="<%= t.default_rate != null && t.default_rate !== '' ? M.num(M.parseMoney(t.default_rate)) : '' %>"><span class="hint">Có thể đặt đơn giá riêng cho từng lớp trong phần sửa lớp.</span></div>
+  <div class="field"><label>Ghi chú</label><textarea name="note"><%= t.note || '' %></textarea></div>
+  <% if (t.id) { %><label class="check"><input type="checkbox" name="active" value="1" <%= String(t.active) !== '0' ? 'checked' : '' %>> Đang dạy</label><% } %>
+  <button class="btn primary">Lưu</button>
+</form>

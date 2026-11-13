@@ -1,0 +1,37 @@
+<div class="page-head"><div><h1>Thu chi</h1><div class="muted">Sổ thu chi đơn giản. Học phí học sinh ghi bằng phiếu thu; tiền dạy GV chi ở mục Giáo viên.</div></div>
+<% if (can.viewReports) { %><a class="btn" href="/reports/export/cashbook.xlsx?from=<%= from %>&to=<%= to %>">Xuất sổ thu chi</a><% } %></div>
+<div class="grid g2">
+<form method="post" action="/cashbook" class="card stack"><%- include('partials/csrf') %><input type="hidden" name="idempotency_key" value="<%= newKey() %>"><input type="hidden" name="direction" value="in">
+  <h2>Ghi khoản thu khác</h2>
+  <div class="row"><div class="field"><label>Danh mục</label><select name="category"><% for (const [k, v] of Object.entries(IN)) { %><option value="<%= k %>"><%= v %></option><% } %></select></div>
+  <div class="field"><label>Số tiền</label><input name="amount" data-money required></div></div>
+  <div class="row"><div class="field"><label>Ngày</label><input name="date" value="<%= dmy(today) %>"></div><div class="field"><label>Người nộp</label><input name="party"></div>
+  <div class="field"><label>Hình thức</label><select name="method"><% for (const [k, v] of Object.entries(METHODS)) { %><option value="<%= k %>"><%= v %></option><% } %></select></div></div>
+  <div class="field"><label>Ghi chú</label><input name="note"></div><button class="btn primary">Ghi khoản thu</button>
+  <p class="hint">Bán sách/đồng phục cho học sinh cụ thể: nên tạo “khoản thu khác” trong hồ sơ học sinh để theo dõi công nợ.</p>
+</form>
+<% if (can.spendMoney) { %>
+<form method="post" action="/cashbook" class="card stack" data-confirm="Xác nhận chi tiền?"><%- include('partials/csrf') %><input type="hidden" name="idempotency_key" value="<%= newKey() %>"><input type="hidden" name="direction" value="out">
+  <h2>Ghi khoản chi</h2>
+  <div class="row"><div class="field"><label>Danh mục</label><select name="category"><% for (const [k, v] of Object.entries(OUT)) { if (k === 'teacher_pay' || k === 'refund') continue; %><option value="<%= k %>"><%= v %></option><% } %></select></div>
+  <div class="field"><label>Số tiền</label><input name="amount" data-money required></div></div>
+  <div class="row"><div class="field"><label>Ngày</label><input name="date" value="<%= dmy(today) %>"></div><div class="field"><label>Người nhận</label><input name="party"></div>
+  <div class="field"><label>Hình thức</label><select name="method"><% for (const [k, v] of Object.entries(METHODS)) { %><option value="<%= k %>"><%= v %></option><% } %></select></div></div>
+  <div class="field"><label>Ghi chú</label><input name="note"></div><button class="btn primary">Ghi khoản chi</button>
+</form>
+<% } else { %><div class="card"><h2>Ghi khoản chi</h2><p class="muted">Bạn chưa được chủ trung tâm cấp quyền chi tiền.</p></div><% } %>
+</div>
+<form class="card row" method="get"><div class="field"><label>Từ ngày</label><input name="from" value="<%= dmy(from) %>"></div><div class="field"><label>Đến ngày</label><input name="to" value="<%= dmy(to) %>"></div>
+  <div class="field"><label>Loại</label><select name="direction"><option value="">Thu & chi</option><option value="in" <%= direction === 'in' ? 'selected' : '' %>>Thu khác</option><option value="out" <%= direction === 'out' ? 'selected' : '' %>>Chi</option></select></div><button class="btn">Xem</button></form>
+<% const tin = list.filter((t) => t.status === 'valid' && t.direction === 'in').reduce((a, t) => a + t.amount, 0); const tout = list.filter((t) => t.status === 'valid' && t.direction === 'out').reduce((a, t) => a + t.amount, 0); const trc = receipts.reduce((a, r) => a + r.amount, 0); %>
+<div class="grid g4 stats" style="margin-bottom:16px">
+  <div class="stat ok"><div class="label">Phiếu thu học sinh</div><div class="value"><%= vnd(trc) %></div></div>
+  <div class="stat ok"><div class="label">Thu khác</div><div class="value"><%= vnd(tin) %></div></div>
+  <div class="stat"><div class="label">Thực chi</div><div class="value"><%= vnd(tout) %></div></div>
+  <div class="stat"><div class="label">Chênh lệch thu – chi tiền</div><div class="value"><%= vnd(trc + tin - tout) %></div><div class="small muted">Không phải lợi nhuận kế toán</div></div>
+</div>
+<div class="card table-wrap"><table class="responsive"><thead><tr><th>Mã</th><th>Ngày</th><th>Danh mục</th><th>Người nộp/nhận</th><th>Ghi chú</th><th class="num">Số tiền</th><th></th></tr></thead><tbody>
+<% for (const t of list) { %><tr class="<%= t.status === 'void' ? 'void' : '' %>"><td data-l="Mã"><%= t.code %></td><td data-l="Ngày"><%= dmy(t.date) %></td><td data-l="Danh mục"><%= ALL[t.category] %></td><td data-l="Người"><%= t.party %></td>
+  <td data-l="Ghi chú" class="small"><%= t.note %><%= t.status === 'void' ? ' · HỦY: ' + t.void_reason : '' %></td><td class="num" data-l="Số tiền"><%= t.direction === 'out' ? '−' : '+' %><%= vnd(t.amount) %></td>
+  <td class="right"><% if (t.status === 'valid' && can.adjustMoney && t.category !== 'refund') { %><form method="post" action="/cashbook/<%= t.id %>/void" class="actions" data-confirm="Hủy giao dịch này?"><%- include('partials/csrf') %><input name="reason" placeholder="Lý do hủy" required style="width:130px"><button class="btn sm danger">Hủy</button></form><% } %></td></tr><% } %>
+<% if (!list.length) { %><tr><td colspan="7" class="muted">Không có giao dịch.</td></tr><% } %></tbody></table></div>

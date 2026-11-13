@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= title ? title + ' · ' : '' %><%= center.center_name %></title>
+<link rel="stylesheet" href="/public/css/app.css">
+</head>
+<body>
+<% if (demo) { %><div class="demo-banner">DỮ LIỆU MẪU – đây là CSDL demo riêng, không phải dữ liệu thật của trung tâm</div><% } %>
+<%
+  const nav = [];
+  if (isTeacher) {
+    nav.push(['/', '🏠', 'Tổng quan'], ['/schedule', '📅', 'Lịch dạy'], ['/classes', '🏫', 'Lớp của tôi'], ['/teachers/' + user.teacher_id, '💼', 'Buổi dạy & tiền dạy']);
+  } else {
+    nav.push(['/', '🏠', 'Tổng quan'], ['/students', '👨‍🎓', 'Học sinh'], ['/classes', '🏫', 'Lớp học & lịch học'], ['/finance', '💰', 'Học phí & thu chi'], ['/teachers', '👩‍🏫', 'Giáo viên']);
+    if (can.viewReports) nav.push(['/reports', '📊', 'Báo cáo']);
+    nav.push([can.manageSettings ? '/settings' : '/settings/catalog', '⚙️', 'Cài đặt']);
+  }
+  const groups = { '/students': ['/students', '/enrollments', '/reservations', '/waiting'], '/classes': ['/classes', '/schedule', '/sessions'], '/finance': ['/finance', '/invoices', '/payments', '/receipts', '/billing', '/cashbook'], '/teachers': ['/teachers'], '/reports': ['/reports'], '/settings': ['/settings'], '/settings/catalog': ['/settings'] };
+  const isActive = (href) => href === '/' ? path === '/' : (groups[href] || [href]).some((p) => path.startsWith(p));
+%>
+<div class="topbar no-print"><button id="nav-toggle" aria-label="Mở menu">☰</button><a href="/"><%= center.center_name %></a></div>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><% if (center.logo_path) { %><img src="/logo" alt=""><% } %><span><%= center.center_name %></span></div>
+    <nav class="nav">
+      <% for (const [href, ico, label] of nav) { %><a href="<%= href %>" class="<%= isActive(href) ? 'active' : '' %>"><span class="ico"><%= ico %></span><%= label %></a><% } %>
+    </nav>
+    <div class="nav-foot">
+      <div><strong><%= user.full_name %></strong></div>
+      <div class="muted small"><%= { owner: 'Chủ trung tâm', staff: 'Nhân viên vận hành', teacher: 'Giáo viên' }[user.role] %></div>
+      <div style="margin-top:6px"><a href="/account/password">Đổi mật khẩu</a> ·
+        <form method="post" action="/logout" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="link-btn">Đăng xuất</button></form></div>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="content">
+      <% if (flash) { %><div class="alert <%= flash.type %>"><%= flash.msg %></div><% } %>
+      <%- body %>
+    </div>
+  </main>
+</div>
+<script src="/public/js/app.js"></script>
+</body>
+</html>

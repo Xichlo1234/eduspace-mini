@@ -1,0 +1,14 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Thiết lập lần đầu</title><link rel="stylesheet" href="/public/css/app.css"></head>
+<body><div class="auth"><div class="card">
+<h1>Chào mừng!</h1>
+<p class="muted">Tạo tài khoản <strong>chủ trung tâm</strong>. Ứng dụng không có mật khẩu mặc định – bạn tự đặt mật khẩu riêng.</p>
+<% if (error) { %><div class="alert error"><%= error %></div><% } %>
+<form method="post" action="/setup" class="stack">
+  <input type="hidden" name="_csrf" value="<%= pcsrf %>">
+  <div class="field"><label>Tên trung tâm</label><input name="center_name" value="<%= values.center_name || '' %>" placeholder="VD: Trung tâm Anh ngữ Ánh Dương"></div>
+  <div class="field"><label>Họ tên của bạn</label><input name="full_name" required value="<%= values.full_name || '' %>"></div>
+  <div class="field"><label>Tên đăng nhập</label><input name="username" required autocapitalize="off" value="<%= values.username || '' %>"><span class="hint">Chữ không dấu, số, dấu chấm. VD: chu.trungtam</span></div>
+  <div class="field"><label>Mật khẩu</label><input type="password" name="password" required minlength="8" autocomplete="new-password"><span class="hint">Ít nhất 8 ký tự, có cả chữ và số.</span></div>
+  <div class="field"><label>Nhập lại mật khẩu</label><input type="password" name="password2" required minlength="8" autocomplete="new-password"></div>
+  <button class="btn primary" style="width:100%">Tạo tài khoản và bắt đầu</button>
+</form></div></div></body></html>

@@ -1,0 +1,28 @@
+<div class="page-head">
+  <div><h1>Lịch học tuần <%= dmy(days[0]) %> – <%= dmy(days[6]) %></h1></div>
+  <div class="actions">
+    <a class="btn" href="?week=<%= prev %><%= teacherId && !isTeacher ? '&teacher_id=' + teacherId : '' %>">← Tuần trước</a>
+    <a class="btn" href="?week=<%= today %><%= teacherId && !isTeacher ? '&teacher_id=' + teacherId : '' %>">Tuần này</a>
+    <a class="btn" href="?week=<%= next %><%= teacherId && !isTeacher ? '&teacher_id=' + teacherId : '' %>">Tuần sau →</a>
+    <% if (!isTeacher) { %>
+    <form method="get" class="actions"><input type="hidden" name="week" value="<%= monday %>">
+      <select name="teacher_id" onchange="this.form.submit()"><option value="">Tất cả giáo viên</option><% for (const t of teachers) { %><option value="<%= t.id %>" <%= teacherId === t.id ? 'selected' : '' %>><%= t.full_name %></option><% } %></select>
+    </form><% } %>
+  </div>
+</div>
+<div class="week">
+<% for (const day of days) { const list = sessions.filter((s) => s.date === day); %>
+  <div class="day <%= day === today ? 'today' : '' %>">
+    <h3><%= D.WEEKDAY_NAMES[D.weekday(day)] %> <span class="muted"><%= dmy(day).slice(0, 5) %></span></h3>
+    <% for (const s of list) { const pending = s.status === 'scheduled' && (s.date < today); %>
+      <a class="sess <%= s.status %> <%= pending ? 'pending' : '' %>" href="/sessions/<%= s.id %>">
+        <strong><%= s.start_time %>–<%= s.end_time %></strong> <%= s.class_name %><br>
+        <%= s.teacher_name || '' %><%= s.teacher_id !== s.main_teacher_id ? ' (thay)' : '' %><%= s.room_name ? ' · ' + s.room_name : '' %> · <%= s.roster_count %> HS
+        <%= s.status === 'cancelled' ? ' · ĐÃ HỦY' : s.status === 'completed' ? ' · ✓' : pending ? ' · chưa điểm danh' : '' %>
+      </a>
+    <% } %>
+    <% if (!list.length) { %><div class="muted small">—</div><% } %>
+  </div>
+<% } %>
+</div>
+<p class="hint">Màu xanh lá: đã dạy xong · vàng: đã qua nhưng chưa điểm danh · xám: đã hủy. Bấm vào buổi để điểm danh, đổi giờ, đổi giáo viên hoặc hủy buổi.</p>

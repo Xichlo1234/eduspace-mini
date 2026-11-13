@@ -1,0 +1,5 @@
+<div class="tabs">
+<% const tabs = []; if (can.manageSettings) tabs.push(['/settings', 'Trung tâm & chính sách']); tabs.push(['/settings/catalog', 'Môn học & phòng'], ['/settings/holidays', 'Ngày nghỉ']);
+   if (can.manageUsers) tabs.push(['/settings/users', 'Tài khoản']); if (can.backup) tabs.push(['/settings/backup', 'Sao lưu']); if (can.manageSettings) tabs.push(['/settings/audit', 'Nhật ký']); %>
+<% for (const [h, l] of tabs) { %><a href="<%= h %>" class="<%= path === h ? 'active' : '' %>"><%= l %></a><% } %>
+</div>

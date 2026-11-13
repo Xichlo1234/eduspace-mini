@@ -1,0 +1,20 @@
+<div class="page-head"><div><h1>Phiếu thu <%= rc.code %> <% if (rc.status === 'void') { %><span class="badge bad">ĐÃ HỦY</span><% } %></h1>
+  <div class="muted"><a href="/students/<%= rc.student_id %>"><%= rc.student_name %></a> · <%= dmy(rc.paid_date) %></div></div>
+  <div class="actions"><a class="btn primary" href="/receipts/<%= rc.id %>?print=1" target="_blank">🖨 In / Lưu PDF</a>
+  <% if (inv && inv.due > 0 && rc.status === 'valid') { %><a class="btn" href="/payments/new?invoice_id=<%= inv.id %>">Thu tiếp phần còn nợ</a><% } %>
+  <a class="btn" href="/students/<%= rc.student_id %>">Về hồ sơ</a></div></div>
+<% if (rc.status === 'void') { %><div class="alert warn">Phiếu đã hủy bởi <%= rc.voided_by_name %> lúc <%= D.displayDateTime(rc.voided_at) %>. Lý do: <%= rc.void_reason %></div><% } %>
+<div class="card"><ul class="list-plain">
+  <li><span>Học sinh</span><strong><%= rc.student_code %> – <%= rc.student_name %></strong></li>
+  <li><span>Lớp · kỳ thu</span><strong><%= rc.class_name || '—' %> · <%= rc.period_label %></strong></li>
+  <li><span>Số tiền</span><strong class="big-total"><%= vnd(rc.amount) %></strong></li>
+  <li><span>Hình thức</span><strong><%= METHODS[rc.method] %></strong></li>
+  <li><span>Người nộp</span><strong><%= rc.payer_name || '—' %></strong></li>
+  <li><span>Người thu</span><strong><%= rc.collector_name %> · <%= D.displayDateTime(rc.created_at) %></strong></li>
+  <% if (rc.note) { %><li><span>Ghi chú</span><strong><%= rc.note %></strong></li><% } %>
+  <% if (inv) { %><li><span>Khoản <a href="/invoices/<%= inv.id %>"><%= inv.code %></a> sau phiếu này</span><strong>đã đóng <%= vnd(inv.paid) %> / <%= vnd(inv.amount) %> · còn nợ <%= vnd(inv.due) %></strong></li><% } else { %><li><span>Loại</span><strong>Đặt cọc / trả trước – số dư hiện tại <%= vnd(credit.free) %></strong></li><% } %>
+</ul></div>
+<% if (rc.status === 'valid' && can.adjustMoney) { %>
+<form method="post" action="/receipts/<%= rc.id %>/void" class="card stack" data-confirm="Hủy phiếu thu này? Phiếu vẫn được lưu với trạng thái đã hủy."><%- include('partials/csrf') %>
+  <h2>Hủy phiếu (khi ghi nhầm)</h2><div class="field"><label>Lý do *</label><input name="reason" required></div><button class="btn danger">Hủy phiếu thu</button></form>
+<% } %>

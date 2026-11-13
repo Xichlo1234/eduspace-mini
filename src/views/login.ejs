@@ -1,0 +1,13 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Đăng nhập</title><link rel="stylesheet" href="/public/css/app.css"></head>
+<body><div class="auth"><div class="card">
+<h1><%= center.center_name %></h1><p class="muted">Đăng nhập để tiếp tục</p>
+<% if (demo) { %><div class="alert warn">Đang chạy <strong>dữ liệu mẫu</strong>. Tài khoản demo: <code>chu.demo</code> / <code>Demo2026</code> (chủ), <code>nhanvien.demo</code> / <code>Demo2026</code>, <code>gv.lan</code> / <code>Demo2026</code> (giáo viên).</div><% } %>
+<% if (error) { %><div class="alert error"><%= error %></div><% } %>
+<form method="post" action="/login" class="stack">
+  <input type="hidden" name="_csrf" value="<%= pcsrf %>"><input type="hidden" name="next" value="<%= next %>">
+  <div class="field"><label>Tên đăng nhập</label><input name="username" required autocapitalize="off" autocomplete="username" value="<%= username || '' %>"></div>
+  <div class="field"><label>Mật khẩu</label><input type="password" name="password" required autocomplete="current-password"></div>
+  <button class="btn primary" style="width:100%">Đăng nhập</button>
+</form>
+<p class="hint" style="margin-top:12px">Quên mật khẩu? Liên hệ chủ trung tâm để đặt lại. Chủ trung tâm quên mật khẩu: xem mục "Khôi phục mật khẩu chủ" trong README.</p>
+</div></div></body></html>

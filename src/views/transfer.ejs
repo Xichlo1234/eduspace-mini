@@ -1,0 +1,27 @@
+<div class="page-head"><div><h1>Chuyển lớp: <a href="/students/<%= e.student_id %>"><%= e.student_name %></a></h1><div class="muted">Lớp hiện tại: <%= e.class_name %> (từ <%= dmy(e.start_date) %>)</div></div></div>
+<%- include('partials/form_error') %>
+<form method="post" class="card stack" id="main-form"><%- include('partials/csrf') %>
+  <div class="row">
+    <div class="field" style="flex:2 1 260px"><label>Lớp mới</label><select name="new_class_id" required><option value="">– chọn –</option><% for (const c of classes) { %><option value="<%= c.id %>" <%= String(v.new_class_id) === String(c.id) ? 'selected' : '' %>><%= c.name %> · <%= vnd(c.fee_amount) %> · <%= c.active_count %><%= c.max_students ? '/' + c.max_students : '' %> HS</option><% } %></select></div>
+    <div class="field"><label>Ngày có hiệu lực</label><input name="effective_date" value="<%= v.effective_date %>" placeholder="dd/mm/yyyy"><span class="hint">Ngày bắt đầu học lớp mới. Lớp cũ chỉ tính đến hết ngày hôm trước.</span></div>
+  </div>
+  <div class="field"><label>Lý do</label><input name="reason" value="<%= v.reason || '' %>"></div>
+  <label class="check"><input type="checkbox" name="force" value="1" <%= v.force ? 'checked' : '' %>> Vẫn chuyển nếu lớp mới đã đủ sĩ số</label>
+  <% if (preview) { const st = preview.old; const n = preview.neu; %>
+  <h3>1. Lớp cũ – <%= st.class.name %></h3>
+  <%- include('partials/statement', { st }) %>
+  <h3>2. Lớp mới – <%= preview.newClass.name %> từ <%= dmy(preview.effective_date) %></h3>
+  <div class="calc">
+    <ul><% for (const l of n.calc.lines) { %><li><%= l %></li><% } %></ul>
+    <ul class="list-plain">
+      <li><span>Học phí dự tính lớp mới (<%= n.invoice.period_label %>)</span><strong><%= vnd(n.invoice.amount) %></strong></li>
+      <li><span>Tiền trả trước dùng được (gồm phần chuyển từ lớp cũ)</span><strong><%= vnd(preview.creditMid.free) %></strong></li>
+      <li><span>Trừ vào học phí lớp mới</span><strong>−<%= vnd(n.applied) %></strong></li>
+      <li><span>Cần đóng thêm</span><strong class="big-total"><%= vnd(n.invoice.due) %></strong></li>
+      <li><span>Còn dư (tiền trả trước sau chuyển)</span><strong><%= vnd(n.credit.free) %></strong></li>
+    </ul>
+  </div>
+  <div class="alert warn">Kiểm tra bảng tính. Lịch sử lớp cũ (điểm danh, phiếu thu) được giữ nguyên. Chỉ thực hiện sau khi bấm xác nhận.</div>
+  <div class="actions"><button class="btn primary" name="action" value="confirm">Xác nhận chuyển lớp</button><button class="btn" name="action" value="preview">Tính lại</button></div>
+  <% } else { %><button class="btn primary" name="action" value="preview">Xem bảng tính</button><% } %>
+</form>

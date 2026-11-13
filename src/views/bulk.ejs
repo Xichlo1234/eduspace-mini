@@ -1,0 +1,16 @@
+<div class="page-head"><div><h1>Tạo học phí hàng loạt</h1><div class="muted">Xem trước, chọn khoản cần tạo, xử lý ngoại lệ. Không tạo trùng khoản đã có.</div></div>
+<form method="get" class="actions"><input type="month" name="ym" value="<%= ym %>"><button class="btn">Xem tháng</button></form></div>
+<form method="post" action="/billing/bulk"><%- include('partials/csrf') %><input type="hidden" name="ym" value="<%= ym %>">
+<div class="card"><h2>Sẽ tạo (<%= p.items.length %> khoản · <%= vnd(p.total) %>)</h2>
+<div class="table-wrap"><table class="responsive"><thead><tr><th><input type="checkbox" id="check-all" checked></th><th>Học sinh</th><th>Lớp</th><th>Kỳ</th><th class="num">Số tiền</th><th>Ghi chú</th></tr></thead><tbody>
+<% for (const i of p.items) { %><tr><td><input type="checkbox" name="keys" value="<%= i.key %>" checked></td><td data-l="HS"><%= i.student %></td><td data-l="Lớp"><%= i.class_name %></td><td data-l="Kỳ"><%= i.period_label %></td>
+  <td class="num" data-l="Số tiền"><strong><%= vnd(i.amount) %></strong></td><td data-l="Ghi chú" class="small"><%= i.note %><% if (i.credit) { %> <span class="badge info">có trả trước <%= vnd(i.credit) %></span><% } %>
+  <details><summary class="small">Cách tính</summary><ul class="small"><% for (const l of i.lines) { %><li><%= l %></li><% } %></ul></details></td></tr><% } %>
+<% if (!p.items.length) { %><tr><td colspan="6" class="muted">Không có khoản nào cần tạo.</td></tr><% } %></tbody></table></div>
+<label class="check" style="margin-top:10px"><input type="checkbox" name="apply_credit" value="1" checked> Tự trừ tiền trả trước (nếu học sinh có)</label>
+<% if (p.items.length) { %><button class="btn primary" style="margin-top:10px">Xác nhận tạo các khoản đã chọn</button><% } %>
+</div></form>
+<div class="card"><h2>Ngoại lệ cần xử lý (<%= p.exceptions.length %>)</h2>
+<ul class="list-plain small"><% for (const x of p.exceptions) { %><li><span><a href="/students/<%= x.student_id %>"><%= x.student %></a> · <%= x.class_name %></span><span class="badge warn"><%= x.reason %></span></li><% } %>
+<% if (!p.exceptions.length) { %><li class="muted">Không có.</li><% } %></ul>
+<p class="hint">Lớp tháng: tạo cho tháng đã chọn. Lớp gói: đề xuất gói mới khi còn ≤ <%= center.package_low_threshold %> buổi. Lớp khóa: chỉ đề xuất khi học sinh chưa có học phí khóa.</p></div>

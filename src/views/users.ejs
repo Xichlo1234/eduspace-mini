@@ -1,0 +1,23 @@
+<div class="page-head"><h1>Tài khoản & phân quyền</h1></div>
+<%- include('partials/settings_tabs') %>
+<div class="alert info">Chủ trung tâm có thể tự vận hành toàn bộ mà không cần tạo thêm tài khoản. Không có mật khẩu mặc định: bạn đặt mật khẩu tạm cho từng người, họ phải đổi ở lần đăng nhập đầu.</div>
+<div class="card table-wrap"><table class="responsive"><thead><tr><th>Tài khoản</th><th>Vai trò</th><th>Quyền thêm (nhân viên)</th><th></th></tr></thead><tbody>
+<% for (const u of list) { %><tr class="<%= u.active ? '' : 'void' %>"><td data-l="TK"><strong><%= u.full_name %></strong><div class="small muted"><%= u.username %></div></td>
+  <td data-l="Vai trò"><%= ROLES[u.role] %><%= u.teacher_name ? ' · ' + u.teacher_name : '' %></td>
+  <td data-l="Quyền"><% if (u.role !== 'owner') { %><form method="post" action="/settings/users/<%= u.id %>" class="stack"><%- include('partials/csrf') %><input type="hidden" name="full_name" value="<%= u.full_name %>"><input type="hidden" name="teacher_id" value="<%= u.teacher_id || '' %>">
+    <% if (u.role === 'staff') { %>
+    <label class="check"><input type="checkbox" name="perm_expense" value="1" <%= u.perm_expense ? 'checked' : '' %>> Được chi tiền</label>
+    <label class="check"><input type="checkbox" name="perm_void" value="1" <%= u.perm_void ? 'checked' : '' %>> Được miễn giảm, hủy/điều chỉnh giao dịch</label>
+    <label class="check"><input type="checkbox" name="perm_reports" value="1" <%= u.perm_reports ? 'checked' : '' %>> Được xem báo cáo tài chính</label><% } %>
+    <label class="check"><input type="checkbox" name="active" value="1" <%= u.active ? 'checked' : '' %>> Đang hoạt động</label><button class="btn sm">Lưu</button></form><% } else { %>Toàn quyền<% } %></td>
+  <td data-l=""><% if (u.role !== 'owner') { %><form method="post" action="/settings/users/<%= u.id %>/password" class="actions"><%- include('partials/csrf') %><input name="password" type="password" placeholder="Mật khẩu tạm mới" required minlength="8" style="width:160px"><button class="btn sm">Đặt lại</button></form><% } %></td></tr><% } %>
+</tbody></table></div>
+<form method="post" action="/settings/users" class="card stack" style="max-width:720px"><%- include('partials/csrf') %><h2>Tạo tài khoản</h2>
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+  <div class="row"><div class="field"><label>Họ tên</label><input name="full_name" required value="<%= v.full_name || '' %>"></div><div class="field"><label>Tên đăng nhập</label><input name="username" required autocapitalize="off" value="<%= v.username || '' %>"></div></div>
+  <div class="row"><div class="field"><label>Vai trò</label><select name="role"><option value="staff" <%= v.role === 'staff' ? 'selected' : '' %>>Nhân viên vận hành</option><option value="teacher" <%= v.role === 'teacher' ? 'selected' : '' %>>Giáo viên</option></select></div>
+  <div class="field"><label>Hồ sơ giáo viên (nếu là GV)</label><select name="teacher_id"><option value="">—</option><% for (const t of teachers) { %><option value="<%= t.id %>"><%= t.full_name %></option><% } %></select></div>
+  <div class="field"><label>Mật khẩu tạm</label><input type="password" name="password" required minlength="8" autocomplete="new-password"></div></div>
+  <fieldset><legend>Quyền thêm cho nhân viên</legend><label class="check"><input type="checkbox" name="perm_expense" value="1"> Được chi tiền</label><label class="check"><input type="checkbox" name="perm_void" value="1"> Được miễn giảm, hủy/điều chỉnh giao dịch</label><label class="check"><input type="checkbox" name="perm_reports" value="1"> Được xem báo cáo tài chính</label></fieldset>
+  <button class="btn primary">Tạo tài khoản</button>
+</form>
