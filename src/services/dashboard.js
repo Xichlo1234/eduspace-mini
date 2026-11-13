@@ -37,11 +37,20 @@ function forUser(db, user) {
     out.waiting = E.waitingList(db);
     const low = settings.getInt(db, 'package_low_threshold');
     out.lowPackages = db.prepare(`SELECT e.id, e.student_id, s.full_name, s.code, c.name AS class_name FROM enrollments e JOIN students s ON s.id = e.student_id
-      JOIN classes c ON c.id = e.class_id WHERE e.status = 'active' AND c.fee_type = 'package'`).all()
+      JOIN classes c ON c.id = e.class_id WHERE e.status = 'active' AND c.fee_type = 'package' AND c.billing_timing = 'prepaid'`).all()
       .map((r) => ({ ...r, usage: E.packageUsage(db, r.id) })).filter((r) => r.usage && r.usage.remaining <= low);
     const rd = settings.getInt(db, 'reservation_alert_days');
     out.reservations = E.listReservations(db, { status: 'active' }).filter((r) => r.expected_return_date && r.expected_return_date <= D.addDays(today, rd));
     out.setup = setupChecklist(db);
+    // nhắc kỳ thu cuối tháng cho lớp thu cuối kỳ (từ ngày 25 đến ngày 10 tháng sau)
+    const day = Number(today.slice(8, 10));
+    if ((day >= 25 || day <= 10) && db.prepare("SELECT 1 FROM classes WHERE billing_timing = 'postpaid' AND status <> 'cancelled'").get()) {
+      const bulk = require('./bulk');
+      const ymPost = bulk.defaultPostMonth(today);
+      const p = bulk.preview(db, { ym: D.nextMonth(D.monthOf(today)), ymPost });
+      const post = p.items.filter((i) => i.timing === 'postpaid');
+      if (post.length) out.postpaidDue = { ymPost, count: post.length, total: post.reduce((a, i) => a + i.amount, 0) };
+    }
   }
   if (perms.can.viewReports(user)) {
     const ym = D.monthOf(today);

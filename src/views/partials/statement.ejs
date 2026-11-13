@@ -18,5 +18,6 @@
     <% if (st.stmt.unusedSessions) { %><li><span>Số buổi đã mua/tính phí chưa học</span><strong><%= st.stmt.unusedSessions %> buổi</strong></li><% } %>
     <% if (st.stmt.overused) { %><li><span class="badge warn">Học vượt số buổi đã mua: <%= st.stmt.overused %> buổi – hệ thống không tự tính tiền, hãy tạo khoản thu nếu cần</span></li><% } %>
   </ul>
+  <% if (st.stmt.postpaidBilled) { %><p class="hint"><strong>Lớp thu cuối kỳ:</strong> đã lập <%= st.stmt.postpaidBilled %> khoản học phí cho phần đã học (chưa lập trước đó).</p><% } %>
   <p class="hint">Phần học phí chưa đóng của các buổi chưa học được giảm khỏi khoản phải thu. Chỉ phần <em>đã đóng</em> vượt số đã phát sinh mới được chuyển.</p>
 </div>

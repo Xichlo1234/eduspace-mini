@@ -22,7 +22,15 @@
     <div class="field"><label>Môn/chương trình mong muốn</label><select name="subject_id"><option value="">—</option><% for (const sj of subjects) { %><option value="<%= sj.id %>"><%= sj.name %></option><% } %></select></div>
     <div class="field" style="flex:2 1 260px"><label>Ghi chú (khung giờ mong muốn…)</label><input name="note" value="<%= v.note || '' %>"></div>
   </div>
-  <% if (preview) { %>
+  <% if (preview && preview.postpaid) { %>
+  <div class="calc">
+    <h3 style="margin-top:0">Lớp <%= cls.name %> thu cuối kỳ (trả sau)</h3>
+    <p>Khi xếp lớp <strong>chưa lập khoản phải thu</strong>. Học phí được lập vào cuối tháng/khóa theo số buổi thực tế, hạn đóng ngày <%= center.postpaid_due_day %> tháng sau.</p>
+    <% if (preview.estimate) { %><p class="small">Dự tính kỳ đầu:</p><ul class="small"><% for (const l of preview.estimate.lines || []) { %><li><%= l %></li><% } %></ul><% } %>
+    <% if (preview.credit.free) { %><p>Tiền đặt cọc/trả trước <strong><%= vnd(preview.credit.free) %></strong> được giữ lại và tự trừ khi lập học phí.</p><% } %>
+  </div>
+  <div class="actions"><button class="btn primary" name="action" value="confirm">Xác nhận xếp lớp</button><button class="btn" name="action" value="preview">Tính lại</button></div>
+  <% } else if (preview) { %>
   <div class="calc">
     <h3 style="margin-top:0">Bảng tính học phí – <%= cls.name %></h3>
     <% if (preview.calc) { %><ul><% for (const l of preview.calc.lines) { %><li><%= l %></li><% } %></ul><% } %>

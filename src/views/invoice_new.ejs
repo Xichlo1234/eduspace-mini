@@ -7,7 +7,8 @@
     <input type="hidden" name="kind" value="tuition"><input type="hidden" name="enrollment_id" value="<%= n.e.id %>"><input type="hidden" name="idempotency_key" value="<%= newKey() %>">
     <strong><%= n.cls.name %></strong>
     <% if (n.calc.error) { %><div class="alert warn"><%= n.calc.error %></div><% } else { %>
-      <% if (n.ym) { %><div class="field" style="max-width:220px"><label>Tháng</label><input type="month" name="ym" value="<%= n.ym %>"></div><% } %>
+      <% if (n.postpaid) { %><span class="badge warn">Thu cuối kỳ</span><% } %>
+      <% if (n.ym) { %><div class="field" style="max-width:220px"><label><%= n.postpaid ? 'Tháng đã học' : 'Tháng' %></label><input type="month" name="ym" value="<%= n.ym %>"></div><% } %>
       <ul class="small"><% for (const l of n.calc.lines) { %><li><%= l %></li><% } %></ul>
       <div><%= n.calc.period_label %>: <strong><%= vnd(n.calc.base_amount) %></strong> <span class="hint">(nếu đổi tháng, số tiền được tính lại theo tháng đã chọn)</span></div>
       <% if (can.adjustMoney) { %><div class="row"><div class="field"><label>Miễn giảm</label><input name="discount" data-money></div><div class="field"><label>Lý do</label><input name="discount_reason"></div></div><% } %>
@@ -23,6 +24,7 @@
   <div class="field"><label>Loại</label><select name="category"><% for (const [k, v] of Object.entries(CATEGORIES)) { if (k === 'tuition') continue; %><option value="<%= k %>"><%= v %></option><% } %></select></div>
   <div class="field"><label>Nội dung</label><input name="description" placeholder="VD: Giáo trình Family and Friends 3"></div>
   <div class="row"><div class="field"><label>Số tiền</label><input name="amount" data-money required></div>
+  <div class="field"><label>Hạn đóng</label><input name="due_date" value="<%= dmy(today) %>"></div>
   <div class="field"><label>Lớp (nếu có)</label><select name="class_id"><option value="">—</option><% for (const e of classesList) { %><option value="<%= e.class_id %>"><%= e.class_name %></option><% } %></select></div></div>
   <button class="btn primary">Tạo khoản thu</button>
 </form>

@@ -7,7 +7,10 @@
     <div class="field"><label>Ngày bắt đầu học lại</label><input name="start_date" value="<%= v.start_date %>"></div>
   </div>
   <label class="check"><input type="checkbox" name="force" value="1"> Vẫn xếp nếu lớp đã đủ sĩ số</label>
-  <% if (preview) { const n = preview.neu; %>
+  <% if (preview && preview.neu.postpaid) { const n = preview.neu; %>
+  <div class="calc"><p>Lớp <strong>thu cuối kỳ</strong>: học phí lập vào cuối tháng. Tiền trả trước (gồm giá trị bảo lưu) <strong><%= vnd(n.credit.free) %></strong> sẽ tự trừ khi lập học phí.</p></div>
+  <div class="actions"><button class="btn primary" name="action" value="confirm">Xác nhận quay lại học</button><button class="btn" name="action" value="preview">Tính lại</button></div>
+  <% } else if (preview) { const n = preview.neu; %>
   <div class="calc"><ul><% for (const l of n.calc.lines) { %><li><%= l %></li><% } %></ul>
   <ul class="list-plain">
     <li><span>Học phí kỳ đầu (<%= n.invoice.period_label %>)</span><strong><%= vnd(n.invoice.amount) %></strong></li>

@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS classes (
   fee_type        TEXT NOT NULL CHECK (fee_type IN ('monthly','course','package')),
   fee_amount      INTEGER NOT NULL DEFAULT 0, -- tháng: phí/tháng; khóa: phí cả khóa; gói: đơn giá/buổi
   package_sessions INTEGER,            -- gói: số buổi mỗi gói
+  billing_timing  TEXT NOT NULL DEFAULT 'prepaid' CHECK (billing_timing IN ('prepaid','postpaid')), -- thu đầu kỳ / cuối kỳ
   prorate_first_month INTEGER NOT NULL DEFAULT 1, -- tháng: nhập học giữa tháng tính theo tỷ lệ buổi
   excused_absence_charged   INTEGER NOT NULL DEFAULT 1, -- vắng có phép vẫn tính phí / trừ buổi
   unexcused_absence_charged INTEGER NOT NULL DEFAULT 1, -- vắng không phép vẫn tính phí / trừ buổi

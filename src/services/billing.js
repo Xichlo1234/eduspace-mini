@@ -118,9 +118,32 @@ function calcPackage(db, enr, cls) {
     lines: [`Gói ${cls.package_sessions} buổi × ${vnd(cls.fee_amount)}/buổi = ${vnd(base)}`], unit_price: cls.fee_amount };
 }
 
+/**
+ * Lớp theo buổi, THU CUỐI KỲ: tính theo số buổi thực học trong tháng.
+ * Buổi được tính: đã dạy xong; có mặt luôn tính; vắng tính hay không theo cấu hình lớp; chưa điểm danh thì chưa tính.
+ */
+function calcPackageUsage(db, enr, cls, ym) {
+  const ms = D.monthStart(ym); const me = D.monthEnd(ym);
+  const ws = D.maxDate(enr.start_date, ms); const we = D.minDate(enr.end_date || me, me);
+  const att = attendanceMap(db, enr.id);
+  const sess = validSessions(db, cls.id, ws, we).filter((s) => s.status === 'completed');
+  const unmarked = sess.filter((s) => !att.get(s.id) || att.get(s.id) === 'unmarked').length;
+  const used = sess.filter((s) => { const st = att.get(s.id); return st && st !== 'unmarked' && (st === 'present' || !ATT_FREE(cls, st)); }).length;
+  const notDone = validSessions(db, cls.id, ws, we).filter((s) => s.status === 'scheduled' && s.date <= D.todayVN()).length;
+  if (!used) return { error: `Không có buổi học nào được tính phí trong tháng ${D.displayMonth(ym)}${unmarked + notDone ? ` (còn ${unmarked + notDone} buổi chưa điểm danh)` : ''}` };
+  const base = used * cls.fee_amount;
+  const lines = [`Tháng ${D.displayMonth(ym)}: học ${used} buổi × ${vnd(cls.fee_amount)}/buổi = ${vnd(base)}`];
+  if (unmarked + notDone) lines.push(`Lưu ý: còn ${unmarked + notDone} buổi chưa điểm danh – chưa được tính`);
+  return { period_key: ym, period_label: `Tháng ${D.displayMonth(ym)} (${used} buổi)`, base_amount: base, sessions_count: used, deduction: 0, lines, unit_price: cls.fee_amount, pending: unmarked + notDone };
+}
+
+const isPostpaid = (cls) => !!cls && cls.billing_timing === 'postpaid';
+
 function calcPeriod(db, enr, cls, ym = null) {
-  if (cls.fee_type === 'monthly') return calcMonthly(db, enr, cls, ym || D.monthOf(D.maxDate(enr.start_date, D.todayVN())));
+  const defYm = ym || D.monthOf(D.maxDate(enr.start_date, D.todayVN()));
+  if (cls.fee_type === 'monthly') return calcMonthly(db, enr, cls, defYm);
   if (cls.fee_type === 'course') return calcCourse(db, enr, cls);
+  if (isPostpaid(cls)) return calcPackageUsage(db, enr, cls, defYm);
   return calcPackage(db, enr, cls);
 }
 /** Kỳ thu đầu tiên khi xếp lớp */
@@ -128,6 +151,18 @@ function calcFirst(db, enr, cls) { return calcPeriod(db, enr, cls, cls.fee_type 
 
 function dueDateFor(db, cls, periodKey, issueDate) {
   const base = D.addDays(issueDate, settings.getInt(db, 'due_days'));
+  if (isPostpaid(cls)) {
+    // thu cuối kỳ: tháng → ngày n của tháng kế tiếp; khóa → sau buổi cuối khóa
+    if (/^\d{4}-\d{2}$/.test(periodKey)) {
+      const day = String(Math.min(28, Math.max(1, settings.getInt(db, 'postpaid_due_day') || 5))).padStart(2, '0');
+      return D.maxDate(`${D.nextMonth(periodKey)}-${day}`, issueDate);
+    }
+    if (periodKey === 'COURSE') {
+      const last = db.prepare("SELECT MAX(date) d FROM class_sessions WHERE class_id = ? AND status <> 'cancelled'").get(cls.id).d;
+      return D.maxDate(last ? D.addDays(last, settings.getInt(db, 'due_days')) : base, issueDate);
+    }
+    return base;
+  }
   if (cls && cls.fee_type === 'monthly' && /^\d{4}-\d{2}$/.test(periodKey)) {
     const day = String(Math.min(28, Math.max(1, settings.getInt(db, 'monthly_due_day') || 10))).padStart(2, '0');
     return D.maxDate(`${periodKey}-${day}`, base);
@@ -393,7 +428,7 @@ function refundCredit(db, user, { student_id, amount, method, reason, idempotenc
 }
 
 module.exports = {
-  CATEGORIES, METHODS, ATT_FREE, periodLabel, validSessions, attendanceMap, calcMonthly, calcCourse, calcPackage, calcPeriod, calcFirst, dueDateFor,
+  CATEGORIES, METHODS, ATT_FREE, periodLabel, validSessions, attendanceMap, calcMonthly, calcCourse, calcPackage, calcPackageUsage, isPostpaid, calcPeriod, calcFirst, dueDateFor,
   balance, listInvoices, studentInvoices, getInvoice, createTuitionInvoice, createOtherInvoice, adjustInvoice, releaseToCredit, voidInvoice,
   credit, creditHistory, applyCredit, recordReceipt, getReceipt, listReceipts, voidReceipt, refundCredit, getEnrollment, getClassRow,
 };

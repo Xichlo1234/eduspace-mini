@@ -13,18 +13,18 @@ const r = express.Router();
 const manage = need('manageClasses');
 
 function formData(req, extra = {}) {
-  return { subjects: catalog.listSubjects(req.db), teachers: catalog.listTeachers(req.db), rooms: catalog.listRooms(req.db), FEE_TYPES: classes.FEE_TYPES, ...extra };
+  return { subjects: catalog.listSubjects(req.db), teachers: catalog.listTeachers(req.db), rooms: catalog.listRooms(req.db), FEE_TYPES: classes.FEE_TYPES, BILLING_TIMING: classes.BILLING_TIMING, ...extra };
 }
 
 r.get('/classes', h((req, res) => {
   const teacherId = perms.isTeacher(req.user) ? req.user.teacher_id : null;
   const status = req.query.status || 'active';
   const list = classes.listClasses(req.db, { status, teacherId }).map((c) => ({ ...c, schedule: classes.scheduleText(classes.currentSlots(req.db, c.id)) }));
-  res.page('classes', { title: 'Lớp học', list, status, FEE_TYPES: classes.FEE_TYPES });
+  res.page('classes', { title: 'Lớp học', list, status, FEE_TYPES: classes.FEE_TYPES, BILLING_TIMING: classes.BILLING_TIMING });
 }));
 
 r.get('/classes/new', manage, (req, res) => {
-  res.page('class_form', formData(req, { title: 'Tạo lớp mới', c: { start_date: D.display(D.todayVN()), fee_type: 'monthly', prorate_first_month: 1, excused_absence_charged: 1, unexcused_absence_charged: 1 },
+  res.page('class_form', formData(req, { title: 'Tạo lớp mới', c: { start_date: D.display(D.todayVN()), fee_type: 'monthly', billing_timing: require('../services/settings').get(req.db, 'default_billing_timing'), prorate_first_month: 1, excused_absence_charged: 1, unexcused_absence_charged: 1 },
     slots: [{ weekday: '', start_time: '18:00', end_time: '19:30' }] }));
 });
 r.post('/classes', manage, h((req, res) => {
@@ -47,7 +47,7 @@ r.get('/classes/:id', h((req, res) => {
   const from = req.query.all ? '0000-00-00' : D.addDays(D.todayVN(), -30);
   const sessions = classes.listSessions(req.db, { from, to: '9999-12-31', classId: cid });
   res.page('class', {
-    title: c.name, c, roster, sessions, slots: classes.allSlots(req.db, cid), current: classes.currentSlots(req.db, cid), STATUS: E.STATUS, SSTATUS: classes.SESSION_STATUS,
+    title: c.name, c, roster, sessions, BILLING_TIMING: classes.BILLING_TIMING, slots: classes.allSlots(req.db, cid), current: classes.currentSlots(req.db, cid), STATUS: E.STATUS, SSTATUS: classes.SESSION_STATUS,
     FEE_TYPES: classes.FEE_TYPES, isOp, waiting: isOp ? E.waitingList(req.db).filter((w) => !w.class_id || w.class_id === cid) : [],
     conflicts: isOp ? classes.classConflicts(req.db, cid, D.todayVN()) : [], stats: req.db.prepare(`SELECT COUNT(*) total, SUM(status='completed') done, SUM(status='cancelled') cancelled FROM class_sessions WHERE class_id = ?`).get(cid),
     history: isOp ? audit.forEntity(req.db, 'class', cid) : [],

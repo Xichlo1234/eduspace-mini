@@ -55,15 +55,15 @@ const start = D.addDays(today, -1 - 7 * 7 - D.weekday(today) + 1); // thứ 2 c�
 classes.addHoliday(db, owner, { date: D.addDays(start, 16), name: 'Nghỉ lễ (demo)' });
 classes.addHoliday(db, owner, { date: D.addDays(today, 10), name: 'Nghỉ bảo trì (demo)' });
 
-const cA = classes.createClass(db, owner, { name: 'Tiếng Anh Starters – tối 2-4', subject_id: sEn, teacher_id: tLan, room_id: r1, max_students: 12, start_date: start,
+const cA = classes.createClass(db, owner, { name: 'Tiếng Anh Starters – tối 2-4', billing_timing: 'prepaid', subject_id: sEn, teacher_id: tLan, room_id: r1, max_students: 12, start_date: start,
   fee_type: 'monthly', fee_amount: '800000', slots: [{ weekday: 1, start_time: '18:00', end_time: '19:30' }, { weekday: 3, start_time: '18:00', end_time: '19:30' }] });
-const cB = classes.createClass(db, owner, { name: 'Tiếng Anh Movers – tối 3-5', subject_id: sEn, teacher_id: tLan, room_id: r1, max_students: 12, start_date: start,
+const cB = classes.createClass(db, owner, { name: 'Tiếng Anh Movers – tối 3-5', billing_timing: 'prepaid', subject_id: sEn, teacher_id: tLan, room_id: r1, max_students: 12, start_date: start,
   fee_type: 'monthly', fee_amount: '900000', slots: [{ weekday: 2, start_time: '18:00', end_time: '19:30' }, { weekday: 4, start_time: '18:00', end_time: '19:30' }] });
-const cC = classes.createClass(db, owner, { name: 'IELTS 5.5 – 24 buổi', subject_id: sIelts, teacher_id: tMinh, room_id: r2, max_students: 10, start_date: D.addDays(start, 7),
+const cC = classes.createClass(db, owner, { name: 'IELTS 5.5 – 24 buổi', billing_timing: 'prepaid', subject_id: sIelts, teacher_id: tMinh, room_id: r2, max_students: 10, start_date: D.addDays(start, 7),
   fee_type: 'course', fee_amount: '7200000', total_sessions: 24, slots: [{ weekday: 2, start_time: '19:45', end_time: '21:15' }, { weekday: 6, start_time: '19:45', end_time: '21:15' }] });
-const cD = classes.createClass(db, owner, { name: 'Toán 6 nâng cao – sáng CN', subject_id: sMath, teacher_id: tHa, room_id: r2, max_students: 15, start_date: start,
+const cD = classes.createClass(db, owner, { name: 'Toán 6 nâng cao – sáng CN (thu cuối tháng)', billing_timing: 'postpaid', subject_id: sMath, teacher_id: tHa, room_id: r2, max_students: 15, start_date: start,
   fee_type: 'monthly', fee_amount: '600000', excused_absence_charged: '0', slots: [{ weekday: 7, start_time: '08:00', end_time: '10:00' }] });
-const cE = classes.createClass(db, owner, { name: 'Piano cơ bản – gói 8 buổi', subject_id: sPiano, teacher_id: tPiano, room_id: r3, max_students: 4, start_date: start,
+const cE = classes.createClass(db, owner, { name: 'Piano cơ bản – gói 8 buổi', billing_timing: 'prepaid', subject_id: sPiano, teacher_id: tPiano, room_id: r3, max_students: 4, start_date: start,
   fee_type: 'package', fee_amount: '200000', package_sessions: 8, excused_absence_charged: '0', slots: [{ weekday: 6, start_time: '17:00', end_time: '18:00' }, { weekday: 7, start_time: '15:00', end_time: '16:00' }] });
 
 const ho = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Võ', 'Đặng', 'Bùi', 'Đỗ', 'Huỳnh'];

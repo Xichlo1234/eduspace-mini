@@ -7,6 +7,8 @@ function setup() {
   const db = openDb(':memory:');
   const ownerId = users.createOwner(db, { username: 'chu', full_name: 'Chủ TT', password: 'MatKhau123' });
   const owner = db.prepare('SELECT * FROM users WHERE id = ?').get(ownerId);
+  // các kiểm thử nghiệm thu gốc dùng thu đầu kỳ; kiểm thử thu cuối kỳ khai báo riêng
+  require('../src/services/settings').set(db, 'default_billing_timing', 'prepaid');
   const t1 = catalog.saveTeacher(db, owner, { full_name: 'GV An', default_rate: '200000' });
   const t2 = catalog.saveTeacher(db, owner, { full_name: 'GV Bình', default_rate: '250000' });
   const room = catalog.saveRoom(db, owner, { name: 'P101', capacity: 20 });

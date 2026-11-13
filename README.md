@@ -93,7 +93,7 @@ Học sinh, công nợ, phiếu thu, sổ thu chi, báo cáo tổng hợp, tiề
 npm test
 ```
 
-17 kiểm thử: các tình huống nghiệm thu (học phí theo tỷ lệ, thu nợ, đặt cọc, ngày lễ, chuyển lớp, bảo lưu, dạy thay, phân quyền, chống bấm trùng…) và kiểm thử HTTP duyệt toàn bộ trang với dữ liệu mẫu.
+22 kiểm thử (gồm thu cuối kỳ): các tình huống nghiệm thu (học phí theo tỷ lệ, thu nợ, đặt cọc, ngày lễ, chuyển lớp, bảo lưu, dạy thay, phân quyền, chống bấm trùng…) và kiểm thử HTTP duyệt toàn bộ trang với dữ liệu mẫu.
 
 ## Cấu trúc mã
 

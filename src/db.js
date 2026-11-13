@@ -12,10 +12,19 @@ function openDb(file) {
   db.pragma('foreign_keys = ON');
   db.pragma('busy_timeout = 5000');
   db.exec(fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8'));
+  migrate(db);
   const cur = db.pragma('user_version', { simple: true });
   if (cur < SCHEMA_VERSION) db.pragma(`user_version = ${SCHEMA_VERSION}`);
   db.file = file;
   return db;
+}
+
+/** Nâng cấp CSDL đã có từ phiên bản trước (thêm cột mới, giữ nguyên dữ liệu) */
+function migrate(db) {
+  const cols = new Set(db.prepare('PRAGMA table_info(classes)').all().map((c) => c.name));
+  if (!cols.has('billing_timing')) {
+    db.exec("ALTER TABLE classes ADD COLUMN billing_timing TEXT NOT NULL DEFAULT 'prepaid' CHECK (billing_timing IN ('prepaid','postpaid'))");
+  }
 }
 
 /** Sinh mã tăng dần duy nhất, vd nextCode(db,'HS','HS',5) -> HS00001 */

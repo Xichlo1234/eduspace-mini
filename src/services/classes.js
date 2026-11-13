@@ -6,6 +6,7 @@ const audit = require('./audit');
 
 const HORIZON_DAYS = 120; // lớp không giới hạn số buổi: sinh sẵn lịch ~4 tháng tới, tự gia hạn
 const FEE_TYPES = { monthly: 'Theo tháng', course: 'Theo khóa', package: 'Theo buổi / gói buổi' };
+const BILLING_TIMING = { prepaid: 'Thu đầu kỳ (trả trước)', postpaid: 'Thu cuối kỳ (trả sau)' };
 const SESSION_STATUS = { scheduled: 'Đã lên lịch', completed: 'Đã dạy xong', cancelled: 'Đã hủy' };
 
 class ConflictError extends AppError {
@@ -157,8 +158,10 @@ function readClassInput(db, input, existing = null) {
   if (fee_type === 'course') assert(total_sessions > 0, 'Lớp theo khóa cần nhập tổng số buổi của khóa');
   if (total_sessions != null) assert(Number.isInteger(total_sessions) && total_sessions > 0 && total_sessions <= 500, 'Tổng số buổi không hợp lệ');
   const fee_amount = mustMoney(input.fee_amount, fee_type === 'package' ? 'Đơn giá mỗi buổi' : 'Mức học phí', { allowZero: true });
-  const package_sessions = fee_type === 'package' ? parseInt(input.package_sessions, 10) : null;
-  if (fee_type === 'package') assert(package_sessions > 0, 'Vui lòng nhập số buổi mỗi gói');
+  const billing_timing = input.billing_timing === 'postpaid' || input.billing_timing === 'prepaid' ? input.billing_timing
+    : (existing ? existing.billing_timing : (require('./settings').get(db, 'default_billing_timing') === 'prepaid' ? 'prepaid' : 'postpaid'));
+  const package_sessions = fee_type === 'package' && input.package_sessions ? parseInt(input.package_sessions, 10) || null : null;
+  if (fee_type === 'package' && billing_timing === 'prepaid') assert(package_sessions > 0, 'Lớp gói thu đầu kỳ cần nhập số buổi mỗi gói');
   const bool = (v, dflt) => (v === undefined ? dflt : v === true || v === '1' || v === 'on' || v === 1 ? 1 : 0);
   const max_students = input.max_students ? parseInt(input.max_students, 10) || null : null;
   const teacher_rate = input.teacher_rate === '' || input.teacher_rate == null ? null : mustMoney(input.teacher_rate, 'Đơn giá tiền dạy', { allowZero: true });
@@ -167,6 +170,7 @@ function readClassInput(db, input, existing = null) {
     subject_id: input.subject_id ? Number(input.subject_id) : null,
     teacher_id: input.teacher_id ? Number(input.teacher_id) : null,
     room_id: input.room_id ? Number(input.room_id) : null,
+    billing_timing,
     prorate_first_month: bool(input.prorate_first_month, 1),
     excused_absence_charged: bool(input.excused_absence_charged, fee_type === 'package' ? 0 : 1),
     unexcused_absence_charged: bool(input.unexcused_absence_charged, 1),
@@ -179,8 +183,8 @@ function createClass(db, user, input) {
   const slots = normalizeSlots(input.slots);
   return db.transaction(() => {
     const id = Number(db.prepare(`INSERT INTO classes(name, subject_id, teacher_id, room_id, max_students, start_date, end_date, total_sessions,
-        fee_type, fee_amount, package_sessions, prorate_first_month, excused_absence_charged, unexcused_absence_charged, teacher_rate, note)
-      VALUES (@name,@subject_id,@teacher_id,@room_id,@max_students,@start_date,@end_date,@total_sessions,@fee_type,@fee_amount,@package_sessions,
+        fee_type, fee_amount, package_sessions, billing_timing, prorate_first_month, excused_absence_charged, unexcused_absence_charged, teacher_rate, note)
+      VALUES (@name,@subject_id,@teacher_id,@room_id,@max_students,@start_date,@end_date,@total_sessions,@fee_type,@fee_amount,@package_sessions,@billing_timing,
         @prorate_first_month,@excused_absence_charged,@unexcused_absence_charged,@teacher_rate,@note)`).run(v).lastInsertRowid);
     const ins = db.prepare('INSERT INTO class_schedules(class_id, weekday, start_time, end_time, effective_from) VALUES (?,?,?,?,?)');
     for (const s of slots) ins.run(id, s.weekday, s.start_time, s.end_time, v.start_date);
@@ -196,6 +200,7 @@ function updateClass(db, user, id, input) {
   const old = getClass(db, id); assert(old, 'Không tìm thấy lớp', 404);
   const v = readClassInput(db, { ...old, ...input, start_date: input.start_date || old.start_date }, old);
   const invoiceCount = db.prepare("SELECT COUNT(*) n FROM invoices WHERE class_id = ? AND status = 'active'").get(id).n;
+  if (v.billing_timing !== old.billing_timing) assert(invoiceCount === 0, 'Lớp đã phát sinh học phí nên không đổi được thời điểm thu (đầu kỳ/cuối kỳ), tránh tính trùng hoặc bỏ sót. Hãy tạo lớp mới hoặc chuyển lớp cho học sinh.');
   if (v.fee_type !== old.fee_type) assert(invoiceCount === 0, 'Lớp đã phát sinh học phí nên không đổi được hình thức học phí. Hãy tạo lớp mới hoặc chuyển lớp cho học sinh.');
   if (v.start_date !== old.start_date) assert(!db.prepare("SELECT 1 FROM class_sessions WHERE class_id = ? AND status = 'completed'").get(id), 'Lớp đã có buổi hoàn thành nên không đổi ngày bắt đầu');
   const applyFrom = D.parseInput(input.apply_from) || D.todayVN();
@@ -212,7 +217,7 @@ function updateClass(db, user, id, input) {
     }
     db.prepare(`UPDATE classes SET name=@name, subject_id=@subject_id, teacher_id=@teacher_id, room_id=@room_id, max_students=@max_students,
       start_date=@start_date, end_date=@end_date, total_sessions=@total_sessions, fee_type=@fee_type, fee_amount=@fee_amount,
-      package_sessions=@package_sessions, prorate_first_month=@prorate_first_month, excused_absence_charged=@excused_absence_charged,
+      package_sessions=@package_sessions, billing_timing=@billing_timing, prorate_first_month=@prorate_first_month, excused_absence_charged=@excused_absence_charged,
       unexcused_absence_charged=@unexcused_absence_charged, teacher_rate=@teacher_rate, note=@note WHERE id=@id`).run({ ...v, id });
     if (v.teacher_id !== old.teacher_id) {
       db.prepare(`UPDATE class_sessions SET teacher_id = ? WHERE class_id = ? AND status = 'scheduled' AND date >= ? AND (teacher_id IS ? )`)
@@ -358,7 +363,7 @@ function removeHoliday(db, user, id) {
 }
 
 module.exports = {
-  FEE_TYPES, SESSION_STATUS, ConflictError, getClass, listClasses, currentSlots, allSlots, scheduleText, generateSessions, extendAll,
+  FEE_TYPES, BILLING_TIMING, SESSION_STATUS, ConflictError, getClass, listClasses, currentSlots, allSlots, scheduleText, generateSessions, extendAll,
   findConflicts, classConflicts, createClass, updateClass, changeSchedule, getSession, listSessions, updateSession, cancelSession,
   restoreSession, addSession, listHolidays, addHoliday, removeHoliday,
 };

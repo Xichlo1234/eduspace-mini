@@ -12,7 +12,9 @@
   <div class="field"><label>Chính sách học phí (ghi chú nội bộ / thông báo phụ huynh)</label><textarea name="tuition_policy"><%= s.tuition_policy %></textarea></div>
   <div class="row">
     <div class="field"><label>Làm tròn học phí tính theo tỷ lệ đến (đ)</label><select name="rounding_step"><% for (const v of ['1', '500', '1000', '5000', '10000']) { %><option value="<%= v %>" <%= s.rounding_step === v ? 'selected' : '' %>><%= vnd(Number(v)) %></option><% } %></select></div>
-    <div class="field"><label>Hạn đóng học phí tháng: ngày</label><input type="number" name="monthly_due_day" min="1" max="28" value="<%= s.monthly_due_day %>"></div>
+    <div class="field"><label>Lớp mới mặc định</label><select name="default_billing_timing"><option value="postpaid" <%= s.default_billing_timing === 'postpaid' ? 'selected' : '' %>>Thu cuối kỳ (trả sau)</option><option value="prepaid" <%= s.default_billing_timing === 'prepaid' ? 'selected' : '' %>>Thu đầu kỳ (trả trước)</option></select></div>
+    <div class="field"><label>Thu cuối kỳ: hạn đóng ngày … tháng sau</label><input type="number" name="postpaid_due_day" min="1" max="28" value="<%= s.postpaid_due_day %>"></div>
+    <div class="field"><label>Thu đầu kỳ: hạn đóng học phí tháng ngày</label><input type="number" name="monthly_due_day" min="1" max="28" value="<%= s.monthly_due_day %>"></div>
     <div class="field"><label>Hạn đóng khoản mới (sau n ngày)</label><input type="number" name="due_days" min="0" value="<%= s.due_days %>"></div>
   </div>
   <div class="row">
@@ -20,7 +22,8 @@
     <div class="field"><label>Cảnh báo vắng nhiều: ≥ (buổi/30 ngày)</label><input type="number" name="absence_alert_count" min="1" value="<%= s.absence_alert_count %>"></div>
     <div class="field"><label>Nhắc sắp hết bảo lưu trước (ngày)</label><input type="number" name="reservation_alert_days" min="0" value="<%= s.reservation_alert_days %>"></div>
   </div>
-  <p class="hint">Hình thức học phí, mức phí và chính sách tính phí khi vắng được cấu hình riêng cho từng lớp.</p>
+  <p class="hint">Hình thức học phí, thời điểm thu (đầu kỳ/cuối kỳ), mức phí và chính sách tính phí khi vắng được cấu hình riêng cho từng lớp.
+    Các khoản thu khác (sách, đồng phục…) thu ngay khi bán, hạn đóng nhập khi tạo khoản.</p>
 </div>
 <div class="card stack"><h2>Mẫu phiếu thu</h2>
   <div class="row"><div class="field"><label>Tiêu đề phiếu</label><input name="receipt_title" value="<%= s.receipt_title %>"></div></div>

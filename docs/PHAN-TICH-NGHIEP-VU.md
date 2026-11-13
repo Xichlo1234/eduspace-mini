@@ -78,6 +78,12 @@ Giao dịch tài chính không bị xóa: hủy phiếu/khoản/giao dịch ch�
 | Chủ đề | Mặc định | Cấu hình ở |
 |---|---|---|
 | Hình thức | Mỗi lớp một hình thức: tháng / khóa / gói buổi. Không đổi hình thức khi lớp đã phát sinh học phí | Lớp |
+| Thời điểm thu | **Thu cuối kỳ (trả sau)** mặc định cho lớp mới; có thể chọn thu đầu kỳ. Không đổi khi lớp đã phát sinh học phí | Lớp, Cài đặt |
+| Thu cuối kỳ – tháng | Xếp lớp chưa lập khoản; cuối tháng lập học phí tháng đã học (cùng công thức tỷ lệ), hạn ngày 5 tháng sau | Cài đặt |
+| Thu cuối kỳ – theo buổi | Học phí tháng = số buổi thực học (đã điểm danh, tính vắng theo cấu hình) × đơn giá | Lớp |
+| Thu cuối kỳ – khóa | Lập học phí khi buổi cuối khóa đã qua; hạn = sau buổi cuối + 7 ngày | Cài đặt |
+| Thu cuối kỳ – chuyển/bảo lưu/nghỉ/hoàn thành | Tự lập học phí phần đã học chưa lập, trừ tiền trả trước; lớp mới chưa lập khoản | (cố định) |
+| Khoản thu khác | Sách, đồng phục, khác: thu khi nhận, hạn đóng nhập khi tạo khoản | Hồ sơ học sinh |
 | Theo tháng | Học đủ tháng = mức phí tháng. Nhập học/kết thúc giữa tháng: **phí × số buổi trong thời gian đăng ký ÷ tổng buổi hợp lệ của tháng** (bật mặc định) | Lớp |
 | Theo khóa | Phí gắn với tổng số buổi. Nhập học muộn: phí × buổi còn lại ÷ tổng buổi. Nghỉ lễ/hủy buổi được **bù cuối khóa** để đủ số buổi | Lớp |
 | Theo gói | Gói = số buổi × đơn giá. Theo dõi mua / đã dùng / còn lại; cảnh báo khi còn ≤ 2 buổi | Lớp, Cài đặt |
@@ -103,7 +109,7 @@ Hệ thống đã có mặc định hợp lý cho từng mục và cho phép đ�
 
 ## 6. Kết quả kiểm thử nghiệm thu
 
-Chạy `npm test` (17 kiểm thử, đều đạt). Ánh xạ với yêu cầu:
+Chạy `npm test` (22 kiểm thử, đều đạt – gồm 5 kiểm thử thu cuối kỳ trong `test/postpaid.test.js`). Ánh xạ với yêu cầu:
 
 | Tình huống | Kiểm thử |
 |---|---|

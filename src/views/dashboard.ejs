@@ -13,6 +13,10 @@
 <p class="hint">Bạn có thể tự vận hành toàn bộ mà không cần tạo tài khoản nhân viên. Nếu bạn tự đứng lớp, hãy thêm chính mình là giáo viên.</p></div>
 <% } %>
 
+<% if (d.postpaidDue) { %>
+<div class="alert warn">Đến kỳ thu học phí cuối kỳ <strong>tháng <%= D.displayMonth(d.postpaidDue.ymPost) %></strong>: <%= d.postpaidDue.count %> khoản chưa lập, tổng <%= vnd(d.postpaidDue.total) %>.
+  <a class="btn sm primary" href="/billing/bulk?ym_post=<%= d.postpaidDue.ymPost %>">Lập học phí</a></div>
+<% } %>
 <% if (d.finance) { %>
 <div class="grid g4 stats" style="margin-bottom:16px">
   <div class="stat ok"><div class="label">Thực thu tháng này</div><div class="value"><%= vnd(d.finance.totalIn) %></div></div>

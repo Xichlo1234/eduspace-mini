@@ -124,6 +124,7 @@ r.post('/students/:id/enroll', operator, h((req, res) => {
   if (!out) return;
   if (input.mode === 'waiting') { req.flash('success', 'Đã đưa vào danh sách chờ xếp lớp'); return res.redirect(303, `/students/${data.s.id}`); }
   if (out.dry) return res.page('enroll', { ...data, preview: out, cls: classes.getClass(req.db, Number(req.body.class_id)) });
+  if (out.postpaid) { req.flash('success', 'Đã xếp lớp. Lớp thu cuối kỳ: học phí được lập vào cuối tháng/khóa (Học phí → Tạo học phí kỳ tiếp theo).'); return res.redirect(303, `/students/${data.s.id}`); }
   req.flash('success', `Đã xếp lớp${out.invoice ? ` – học phí ${out.invoice.period_label}: ${B.balance(req.db, out.invoice.id).due > 0 ? 'còn phải đóng ' + require('../lib/money').vnd(B.balance(req.db, out.invoice.id).due) : 'đã thanh toán đủ'}` : ''}`);
   res.redirect(303, out.invoice && B.balance(req.db, out.invoice.id).due > 0 ? `/payments/new?invoice_id=${out.invoice.id}` : `/students/${data.s.id}`);
 }));

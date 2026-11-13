@@ -33,12 +33,19 @@
       <% if (typeof hasInvoices !== 'undefined' && hasInvoices) { %><input type="hidden" name="fee_type" value="<%= c.fee_type %>"><% } %></div>
     <div class="field"><label><span data-fee="monthly">Học phí mỗi tháng</span><span data-fee="course">Học phí cả khóa</span><span data-fee="package">Đơn giá mỗi buổi</span> (đ)</label><input name="fee_amount" data-money required value="<%= c.fee_amount != null && c.fee_amount !== '' ? M.num(M.parseMoney(c.fee_amount)) : '' %>"></div>
     <div class="field" data-fee="course"><label>Tổng số buổi của khóa *</label><input type="number" name="total_sessions" min="1" value="<%= c.total_sessions || '' %>"></div>
-    <div class="field" data-fee="package"><label>Số buổi mỗi gói *</label><input type="number" name="package_sessions" min="1" value="<%= c.package_sessions || '' %>"></div>
+    <div class="field"><label>Thời điểm thu *</label><select name="billing_timing" id="billing_timing" <%= typeof hasInvoices !== 'undefined' && hasInvoices ? 'disabled' : '' %>>
+      <% for (const [k, v] of Object.entries(BILLING_TIMING)) { %><option value="<%= k %>" <%= (c.billing_timing || 'postpaid') === k ? 'selected' : '' %>><%= v %></option><% } %></select>
+      <% if (typeof hasInvoices !== 'undefined' && hasInvoices) { %><input type="hidden" name="billing_timing" value="<%= c.billing_timing %>"><% } %></div>
+    <div class="field" data-fee="package" data-timing="prepaid"><label>Số buổi mỗi gói *</label><input type="number" name="package_sessions" min="1" value="<%= c.package_sessions || '' %>"></div>
   </div>
+  <div class="alert info" data-timing="postpaid"><strong>Thu cuối kỳ (trả sau):</strong> khi xếp lớp chưa lập khoản phải thu.
+    Cuối tháng vào <em>Học phí → Tạo học phí kỳ tiếp theo</em> để lập học phí của tháng đã học (lớp tháng: theo thời gian đăng ký; lớp theo buổi: theo số buổi thực học); lớp khóa lập khi khóa kết thúc.
+    Hạn đóng mặc định ngày <%= center.postpaid_due_day %> tháng sau. Tiền đặt cọc/trả trước được trừ khi lập khoản. Chuyển lớp, bảo lưu, nghỉ học: hệ thống tự lập học phí phần đã học.</div>
+  <div class="alert info" data-timing="prepaid"><strong>Thu đầu kỳ (trả trước):</strong> lập khoản kỳ đầu ngay khi xếp lớp; các kỳ sau lập trước khi bắt đầu kỳ. Hạn đóng mặc định ngày <%= center.monthly_due_day %> của tháng.</div>
   <div class="calc" data-fee="monthly"><strong>Cách tính theo tháng:</strong> học đủ tháng thu đúng mức phí tháng. Buổi trung tâm hủy/nghỉ lễ không tính.
     <label class="check" style="margin-top:6px"><input type="checkbox" name="prorate_first_month" value="1" <%= String(c.prorate_first_month) !== '0' ? 'checked' : '' %>> Nhập học/nghỉ giữa tháng: tính theo tỷ lệ = phí tháng × số buổi thuộc thời gian đăng ký ÷ tổng số buổi hợp lệ của tháng (VD 800.000 × 4/8 = 400.000)</label></div>
   <div class="calc" data-fee="course"><strong>Cách tính theo khóa:</strong> học phí gắn với tổng số buổi. Nhập học muộn: phí khóa × số buổi còn lại ÷ tổng số buổi. Nghỉ lễ/hủy buổi được bù cuối khóa.</div>
-  <div class="calc" data-fee="package"><strong>Cách tính theo gói:</strong> mỗi lần thu một gói = số buổi mỗi gói × đơn giá. Theo dõi số buổi đã mua, đã dùng, còn lại. Buổi trung tâm hủy không trừ buổi.</div>
+  <div class="calc" data-fee="package"><strong>Cách tính theo buổi:</strong> <span data-timing="prepaid">thu trước từng gói = số buổi mỗi gói × đơn giá; theo dõi đã mua, đã dùng, còn lại.</span><span data-timing="postpaid">cuối tháng thu = số buổi thực học trong tháng × đơn giá (buổi chưa điểm danh chưa tính).</span> Buổi trung tâm hủy không tính.</div>
   <fieldset><legend>Chính sách khi học sinh vắng (cấu hình rõ, hệ thống không tự suy đoán)</legend>
     <label class="check"><input type="checkbox" name="excused_absence_charged" value="1" <%= String(c.excused_absence_charged) !== '0' ? 'checked' : '' %>> Vắng <strong>có phép</strong> vẫn tính phí / trừ buổi</label>
     <label class="check"><input type="checkbox" name="unexcused_absence_charged" value="1" <%= String(c.unexcused_absence_charged) !== '0' ? 'checked' : '' %>> Vắng <strong>không phép</strong> vẫn tính phí / trừ buổi</label>

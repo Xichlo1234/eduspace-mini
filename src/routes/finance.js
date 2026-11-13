@@ -28,13 +28,14 @@ r.get('/invoices/new', collect, h((req, res) => {
   const next = enrs.map((e) => {
     const enr = B.getEnrollment(req.db, e.id); const cls = B.getClassRow(req.db, e.class_id);
     let ym = null;
-    if (cls.fee_type === 'monthly') {
-      const last = req.db.prepare("SELECT MAX(period_key) p FROM invoices WHERE enrollment_id = ? AND status = 'active'").get(e.id).p;
-      ym = last ? D.nextMonth(last) : D.monthOf(D.maxDate(enr.start_date, D.todayVN()));
+    const monthBased = cls.fee_type === 'monthly' || (cls.fee_type === 'package' && B.isPostpaid(cls));
+    if (monthBased) {
+      const last = req.db.prepare("SELECT MAX(period_key) p FROM invoices WHERE enrollment_id = ? AND status = 'active' AND period_key GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]'").get(e.id).p;
+      ym = last ? D.nextMonth(last) : D.monthOf(B.isPostpaid(cls) ? enr.start_date : D.maxDate(enr.start_date, D.todayVN()));
       classes.extendAll(req.db, D.monthEnd(ym));
     }
     const calc = B.calcPeriod(req.db, enr, cls, ym);
-    return { e, cls, ym, calc };
+    return { e, cls, ym, calc, postpaid: B.isPostpaid(cls) };
   });
   res.page('invoice_new', { title: `Tạo khoản thu: ${s.full_name}`, s, next, CATEGORIES: B.CATEGORIES, classesList: enrs });
 }));
@@ -103,11 +104,14 @@ r.post('/receipts/:id/void', collect, h((req, res) => {
 // Tạo học phí hàng loạt
 r.get('/billing/bulk', collect, h((req, res) => {
   const ym = D.isValidMonth(req.query.ym) ? req.query.ym : D.nextMonth(D.monthOf(D.todayVN()));
-  res.page('bulk', { title: 'Tạo học phí hàng loạt', p: bulk.preview(req.db, { ym }), ym });
+  const ymPost = D.isValidMonth(req.query.ym_post) ? req.query.ym_post : bulk.defaultPostMonth();
+  const hasPost = !!req.db.prepare("SELECT 1 FROM classes WHERE billing_timing = 'postpaid' AND status <> 'cancelled'").get();
+  const hasPre = !!req.db.prepare("SELECT 1 FROM classes WHERE billing_timing = 'prepaid' AND status <> 'cancelled'").get();
+  res.page('bulk', { title: 'Tạo học phí hàng loạt', p: bulk.preview(req.db, { ym, ymPost }), ym, ymPost, hasPost, hasPre });
 }));
 r.post('/billing/bulk', collect, h((req, res) => {
   const keys = req.body.keys ? [].concat(req.body.keys) : [];
-  const out = bulk.commit(req.db, req.user, { ym: req.body.ym, keys, apply_credit: req.body.apply_credit === '1' });
+  const out = bulk.commit(req.db, req.user, { ym: req.body.ym, ymPost: req.body.ym_post, keys, apply_credit: req.body.apply_credit === '1' });
   req.flash('success', `Đã tạo ${out.created} khoản phải thu${out.skipped ? `, bỏ qua ${out.skipped} khoản đã có` : ''}${out.applied ? `, trừ ${require('../lib/money').vnd(out.applied)} tiền trả trước` : ''}`);
   res.redirect(303, `/finance?status=open`);
 }));

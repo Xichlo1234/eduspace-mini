@@ -6,7 +6,7 @@
 <% for (const c of list) { %><tr>
   <td data-l="Lớp"><a href="/classes/<%= c.id %>"><strong><%= c.name %></strong></a><div class="small muted"><%= c.subject_name || '' %><%= c.room_name ? ' · ' + c.room_name : '' %></div></td>
   <td data-l="GV"><%= c.teacher_name || '—' %></td><td data-l="Lịch" class="small"><%= c.schedule || '—' %></td>
-  <td data-l="Học phí" class="small"><%= FEE_TYPES[c.fee_type] %><% if (!isTeacher) { %>: <%= vnd(c.fee_amount) %><%= c.fee_type === 'package' ? '/buổi, gói ' + c.package_sessions + ' buổi' : c.fee_type === 'monthly' ? '/tháng' : '/khóa' %><% } %></td>
+  <td data-l="Học phí" class="small"><%= FEE_TYPES[c.fee_type] %> · <%= c.billing_timing === 'postpaid' ? 'thu cuối kỳ' : 'thu đầu kỳ' %><% if (!isTeacher) { %>: <%= vnd(c.fee_amount) %><%= c.fee_type === 'package' ? '/buổi' + (c.package_sessions && c.billing_timing !== 'postpaid' ? ', gói ' + c.package_sessions + ' buổi' : '') : c.fee_type === 'monthly' ? '/tháng' : '/khóa' %><% } %></td>
   <td data-l="Sĩ số"><%= c.active_count %><%= c.max_students ? '/' + c.max_students : '' %></td>
   <td data-l="Tiến độ" class="small"><%= c.done_count %>/<%= c.total_sessions || c.session_count %> buổi<%= c.total_sessions ? '' : ' (đã lên lịch)' %></td></tr><% } %>
 <% if (!list.length) { %><tr><td colspan="6" class="muted">Chưa có lớp. <% if (can.manageClasses) { %><a href="/classes/new">Tạo lớp đầu tiên</a><% } %></td></tr><% } %>

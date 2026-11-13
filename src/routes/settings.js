@@ -18,7 +18,7 @@ const owner = need('manageSettings');
 const ops = need('manageClasses');
 const csrfMultipart = (req, res, next) => (req.body._csrf === req.user.csrf ? next() : next(new AppError('Phiên làm việc đã hết hạn, vui lòng tải lại trang', 403)));
 
-const EDITABLE = ['center_name', 'center_address', 'center_phone', 'center_email', 'bank_info', 'rounding_step', 'due_days', 'monthly_due_day', 'package_low_threshold',
+const EDITABLE = ['center_name', 'center_address', 'center_phone', 'center_email', 'bank_info', 'rounding_step', 'due_days', 'monthly_due_day', 'default_billing_timing', 'postpaid_due_day', 'package_low_threshold',
   'absence_alert_count', 'reservation_alert_days', 'receipt_title', 'receipt_footer', 'tuition_policy', 'tpl_fee', 'tpl_absence', 'tpl_schedule', 'tpl_review'];
 
 r.get('/settings', owner, (req, res) => res.page('settings', { title: 'Cài đặt', s: settings.getAll(req.db) }));

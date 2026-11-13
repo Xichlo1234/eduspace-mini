@@ -7,18 +7,18 @@
 <% if (conflicts.length) { %><div class="alert warn"><strong>Có <%= conflicts.length %> buổi sắp tới trùng giờ giáo viên/phòng:</strong> <%= conflicts.slice(0, 5).map((x) => dmy(x.date) + ' ' + x.start_time + ' với ' + x.other_class + ' (' + x.by + ')').join('; ') %></div><% } %>
 
 <div class="grid g4 stats" style="margin-bottom:16px">
-  <div class="stat"><div class="label">Học phí</div><div class="value small"><%= FEE_TYPES[c.fee_type] %></div><% if (isOp) { %><div class="small"><%= vnd(c.fee_amount) %><%= c.fee_type === 'package' ? '/buổi · gói ' + c.package_sessions + ' buổi' : c.fee_type === 'monthly' ? '/tháng' : '/khóa ' + c.total_sessions + ' buổi' %></div><% } %></div>
+  <div class="stat"><div class="label">Học phí</div><div class="value small"><%= FEE_TYPES[c.fee_type] %> · <%= BILLING_TIMING[c.billing_timing] %></div><% if (isOp) { %><div class="small"><%= vnd(c.fee_amount) %><%= c.fee_type === 'package' ? '/buổi' + (c.package_sessions && c.billing_timing !== 'postpaid' ? ' · gói ' + c.package_sessions + ' buổi' : '') : c.fee_type === 'monthly' ? '/tháng' : '/khóa ' + c.total_sessions + ' buổi' %></div><% } %></div>
   <div class="stat"><div class="label">Sĩ số đang học</div><div class="value"><%= roster.filter((e) => e.status === 'active').length %><%= c.max_students ? '/' + c.max_students : '' %></div></div>
   <div class="stat"><div class="label">Buổi đã dạy</div><div class="value"><%= stats.done || 0 %>/<%= c.total_sessions || (stats.total - (stats.cancelled || 0)) %></div></div>
   <div class="stat"><div class="label">Buổi đã hủy</div><div class="value"><%= stats.cancelled || 0 %></div></div>
 </div>
 
 <div class="card"><h2>Học sinh <% if (isOp) { %><a class="btn sm primary" href="/students?enroll_class=<%= c.id %>">+ Xếp học sinh</a><% } %></h2>
-<div class="table-wrap"><table class="responsive"><thead><tr><th>Học sinh</th><th>Trạng thái</th><th>Từ – đến</th><% if (c.fee_type === 'package') { %><th>Gói buổi</th><% } %><% if (isOp) { %><th class="num">Còn nợ</th><% } %><th></th></tr></thead><tbody>
+<div class="table-wrap"><table class="responsive"><thead><tr><th>Học sinh</th><th>Trạng thái</th><th>Từ – đến</th><% if (c.fee_type === 'package') { %><th>Buổi học</th><% } %><% if (isOp) { %><th class="num">Còn nợ</th><% } %><th></th></tr></thead><tbody>
 <% for (const e of roster) { %><tr><td data-l="HS"><a href="/students/<%= e.student_id %>"><%= e.full_name %></a> <span class="muted small"><%= e.code %></span></td>
   <td data-l="Trạng thái"><span class="badge <%= { active: 'ok', reserved: 'warn', dropped: 'bad' }[e.status] || '' %>"><%= STATUS[e.status] %></span></td>
   <td data-l="Thời gian"><%= dmy(e.start_date) %> → <%= dmy(e.end_date) %></td>
-  <% if (c.fee_type === 'package') { %><td data-l="Gói"><% if (e.usage) { %>còn <strong><%= e.usage.remaining %></strong>/<%= e.usage.purchased %><% } %></td><% } %>
+  <% if (c.fee_type === 'package') { %><td data-l="Gói"><% if (e.usage && e.usage.postpaid) { %>đã học <%= e.usage.used %> · chưa lập phí <strong><%= e.usage.unbilled %></strong><% } else if (e.usage) { %>còn <strong><%= e.usage.remaining %></strong>/<%= e.usage.purchased %><% } %></td><% } %>
   <% if (isOp) { %><td class="num" data-l="Còn nợ"><%= e.due ? vnd(e.due) : '—' %></td><% } %>
   <td class="right"><a class="btn sm" href="/messages/compose?type=review&student_id=<%= e.student_id %>&class_id=<%= c.id %>">Nhắn PH</a></td></tr><% } %>
 <% if (!roster.length) { %><tr><td colspan="6" class="muted">Chưa có học sinh. Mở hồ sơ học sinh → “Xếp lớp”.</td></tr><% } %></tbody></table></div>

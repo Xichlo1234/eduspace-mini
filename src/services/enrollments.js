@@ -32,7 +32,7 @@ function getEnrollment(db, id) {
       LEFT JOIN subjects sub ON sub.id = COALESCE(c.subject_id, e.subject_id) WHERE e.id = ?`).get(id);
 }
 function studentEnrollments(db, studentId) {
-  return db.prepare(`SELECT e.*, c.name AS class_name, c.fee_type, sub.name AS subject_name, t.full_name AS teacher_name
+  return db.prepare(`SELECT e.*, c.name AS class_name, c.fee_type, c.billing_timing, sub.name AS subject_name, t.full_name AS teacher_name
     FROM enrollments e LEFT JOIN classes c ON c.id = e.class_id LEFT JOIN subjects sub ON sub.id = COALESCE(c.subject_id, e.subject_id)
     LEFT JOIN teachers t ON t.id = c.teacher_id WHERE e.student_id = ? ORDER BY CASE e.status WHEN 'active' THEN 0 WHEN 'waiting' THEN 1 WHEN 'reserved' THEN 2 ELSE 3 END, e.id DESC`).all(studentId);
 }
@@ -55,6 +55,13 @@ function packageUsage(db, enrollmentId) {
   const e = db.prepare('SELECT * FROM enrollments WHERE id = ?').get(enrollmentId);
   const cls = e && e.class_id ? B.getClassRow(db, e.class_id) : null;
   if (!cls || cls.fee_type !== 'package') return null;
+  if (B.isPostpaid(cls)) {
+    // thu cuối kỳ: không mua trước, tính theo buổi đã học
+    const c = consumption(db, e, cls, null);
+    const used = c.filter((x) => x.charged).length;
+    const billed = db.prepare("SELECT COALESCE(SUM(sessions_count),0) n FROM invoices WHERE enrollment_id = ? AND status = 'active' AND category = 'tuition'").get(enrollmentId).n;
+    return { postpaid: true, used, billed, unbilled: Math.max(0, used - billed), unmarked: c.filter((x) => x.unmarked).length };
+  }
   const purchased = db.prepare("SELECT COALESCE(SUM(sessions_count),0) n FROM invoices WHERE enrollment_id = ? AND status = 'active' AND period_key LIKE 'PKG-%'").get(enrollmentId).n;
   const c = consumption(db, e, cls, null);
   const used = c.filter((x) => x.charged).length;
@@ -138,8 +145,33 @@ function obligationStatement(db, enr, cls, cutoff) {
  * rút phần đã đóng vượt nghĩa vụ ra sổ trả trước, ưu tiên bù vào nợ cũ của chính đăng ký.
  * Không coi toàn bộ tiền đã đóng là tiền được chuyển: chỉ phần đã đóng vượt nghĩa vụ mới được chuyển.
  */
+/**
+ * Lớp THU CUỐI KỲ: lập khoản phải thu cho các kỳ đã học nhưng chưa lập (đến hết ngày lastDay),
+ * rồi trừ tiền trả trước nếu có. Dùng khi chuyển lớp, bảo lưu, nghỉ học, hoàn thành.
+ */
+function billUnbilled(db, user, enr, cls, lastDay) {
+  if (!B.isPostpaid(cls) || !enr.start_date || lastDay < enr.start_date) return [];
+  const e = { ...enr, end_date: lastDay };
+  const has = (key) => db.prepare("SELECT 1 FROM invoices WHERE enrollment_id = ? AND period_key = ? AND status = 'active'").get(enr.id, key);
+  const made = [];
+  const create = (c) => {
+    if (c.error || !c.base_amount) return;
+    const id = B.createTuitionInvoice(db, user, { enrollment_id: enr.id, calc: c });
+    B.applyCredit(db, user, { invoice_id: id, note: 'Trừ tiền trả trước vào học phí thu cuối kỳ' });
+    made.push(id);
+  };
+  if (cls.fee_type === 'course') { if (!has('COURSE')) create(B.calcCourse(db, e, cls)); return made; }
+  for (let m = D.monthOf(enr.start_date); m <= D.monthOf(lastDay); m = D.nextMonth(m)) {
+    if (has(m)) continue;
+    create(cls.fee_type === 'monthly' ? B.calcMonthly(db, e, cls, m) : B.calcPackageUsage(db, e, cls, m));
+  }
+  return made;
+}
+
 function settle(db, user, enr, cls, cutoff, reason, kind) {
+  const billed = billUnbilled(db, user, enr, cls, D.addDays(cutoff, -1));
   const stmt = obligationStatement(db, enr, cls, cutoff);
+  stmt.postpaidBilled = billed.length;
   let released = 0;
   for (const l of stmt.lines) {
     if (l.incurred < l.inv.amount) {
@@ -180,7 +212,16 @@ function openEnrollment(db, user, { student_id, cls, start_date, from_enrollment
       .run(student_id, cls.id, D.maxDate(sd, cls.start_date), from_enrollment_id, note, user ? user.id : null).lastInsertRowid);
     event(db, user, id, 'enroll', null, 'active', sd, null, { class_id: cls.id });
   }
-  let invoice = null; let applied = 0; let calc = null;
+  let invoice = null; let applied = 0; let calc = null; let estimate = null;
+  if (B.isPostpaid(cls)) {
+    // thu cuối kỳ: chưa lập khoản phải thu khi xếp lớp; chỉ hiển thị dự tính
+    const enr = db.prepare('SELECT * FROM enrollments WHERE id = ?').get(id);
+    if (cls.fee_type === 'monthly') estimate = B.calcMonthly(db, enr, cls, D.monthOf(enr.start_date));
+    else if (cls.fee_type === 'course') estimate = B.calcCourse(db, enr, cls);
+    else estimate = { lines: [`Tính theo số buổi thực học × ${require('../lib/money').vnd(cls.fee_amount)}/buổi, lập khoản vào cuối mỗi tháng`] };
+    if (estimate.error) estimate = { lines: [estimate.error] };
+    return { enrollment_id: id, invoice: null, applied: 0, calc: null, estimate, postpaid: true, credit: B.credit(db, student_id) };
+  }
   if (create_invoice) {
     const enr = db.prepare('SELECT * FROM enrollments WHERE id = ?').get(id);
     calc = B.calcFirst(db, enr, cls);
@@ -332,6 +373,9 @@ function drop(db, user, input) {
   const date = D.parseInput(input.date) || D.todayVN();
   return runMaybeDry(db, !!input.dry, () => {
     let st = null;
+    if (e.status === 'active' && (input.settle === '0' || input.settle === false)) {
+      billUnbilled(db, user, e, B.getClassRow(db, e.class_id), D.addDays(date, -1));
+    }
     if (e.status === 'active' && input.settle !== '0' && input.settle !== false) {
       assert(date > e.start_date, 'Ngày nghỉ phải sau ngày bắt đầu học (hoặc chọn không tính lại)');
       st = settle(db, user, e, B.getClassRow(db, e.class_id), date, `Nghỉ học từ ${D.display(date)}`, 'drop');
@@ -360,7 +404,10 @@ function complete(db, user, { enrollment_id, date }) {
   const e = db.prepare('SELECT * FROM enrollments WHERE id = ?').get(Number(enrollment_id));
   assert(e && e.status === 'active', 'Chỉ hoàn thành đăng ký đang học');
   const d = D.parseInput(date) || D.todayVN();
-  db.prepare("UPDATE enrollments SET status = 'completed', end_date = ? WHERE id = ?").run(d, e.id);
+  db.transaction(() => {
+    billUnbilled(db, user, e, B.getClassRow(db, e.class_id), d);
+    db.prepare("UPDATE enrollments SET status = 'completed', end_date = ? WHERE id = ?").run(d, e.id);
+  })();
   event(db, user, e.id, 'complete', 'active', 'completed', d);
   audit.log(db, user, 'enrollment.complete', 'enrollment', e.id);
 }
@@ -371,6 +418,6 @@ function events(db, studentId) {
 }
 
 module.exports = {
-  STATUS, getEnrollment, studentEnrollments, classRoster, waitingList, packageUsage, consumption, obligationStatement, settle,
+  STATUS, getEnrollment, studentEnrollments, classRoster, waitingList, packageUsage, consumption, obligationStatement, settle, billUnbilled,
   enroll, placeWaiting, transfer, reserve, getReservation, listReservations, returnFromReservation, drop, complete, events,
 };

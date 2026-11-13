@@ -72,6 +72,15 @@
     document.querySelectorAll('[data-fee]').forEach(function (el) { el.hidden = el.dataset.fee.split(' ').indexOf(ft.value) < 0; });
   }
   if (ft) { ft.addEventListener('change', syncFee); syncFee(); }
+  var bt = document.getElementById('billing_timing');
+  function syncTiming() {
+    if (!bt) return;
+    document.querySelectorAll('[data-timing]').forEach(function (el) {
+      var hideByFee = el.dataset.fee && ft && el.dataset.fee.split(' ').indexOf(ft.value) < 0;
+      el.hidden = hideByFee || el.dataset.timing !== bt.value;
+    });
+  }
+  if (bt) { bt.addEventListener('change', syncTiming); if (ft) ft.addEventListener('change', syncTiming); syncTiming(); }
 
   // Chọn chế độ xếp lớp
   function syncMode() {

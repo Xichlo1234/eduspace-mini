@@ -11,6 +11,11 @@
   <h3>1. Lớp cũ – <%= st.class.name %></h3>
   <%- include('partials/statement', { st }) %>
   <h3>2. Lớp mới – <%= preview.newClass.name %> từ <%= dmy(preview.effective_date) %></h3>
+  <% if (n.postpaid) { %>
+  <div class="calc"><p>Lớp mới <strong>thu cuối kỳ</strong>: chưa lập học phí lúc chuyển; lập vào cuối tháng từ ngày <%= dmy(preview.effective_date) %>.</p>
+    <% if (n.estimate) { %><ul class="small"><% for (const l of n.estimate.lines || []) { %><li><%= l %></li><% } %></ul><% } %>
+    <p>Tiền trả trước sau khi chuyển: <strong><%= vnd(n.credit.free) %></strong> (tự trừ khi lập học phí lớp mới).</p></div>
+  <% } else { %>
   <div class="calc">
     <ul><% for (const l of n.calc.lines) { %><li><%= l %></li><% } %></ul>
     <ul class="list-plain">
@@ -21,6 +26,7 @@
       <li><span>Còn dư (tiền trả trước sau chuyển)</span><strong><%= vnd(n.credit.free) %></strong></li>
     </ul>
   </div>
+  <% } %>
   <div class="alert warn">Kiểm tra bảng tính. Lịch sử lớp cũ (điểm danh, phiếu thu) được giữ nguyên. Chỉ thực hiện sau khi bấm xác nhận.</div>
   <div class="actions"><button class="btn primary" name="action" value="confirm">Xác nhận chuyển lớp</button><button class="btn" name="action" value="preview">Tính lại</button></div>
   <% } else { %><button class="btn primary" name="action" value="preview">Xem bảng tính</button><% } %>
