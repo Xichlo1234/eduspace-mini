@@ -1,10 +1,6 @@
-<div class="page-head"><h1>Môn học & phòng học</h1></div>
+<div class="page-head"><h1>Phòng học</h1></div>
 <%- include('partials/settings_tabs') %>
-<div class="grid g2">
-<div class="card"><h2>Môn học / chương trình</h2>
-<ul class="list-plain"><% for (const s of subjects) { %><li><form method="post" action="/settings/subjects" class="row" style="width:100%"><%- include('partials/csrf') %><input type="hidden" name="id" value="<%= s.id %>">
-  <div class="field" style="flex:2 1 160px"><input name="name" value="<%= s.name %>"></div><div class="field"><select name="active"><option value="1" <%= s.active ? 'selected' : '' %>>Đang dùng</option><option value="0" <%= !s.active ? 'selected' : '' %>>Ngừng</option></select></div><button class="btn sm">Lưu</button></form></li><% } %></ul>
-<form method="post" action="/settings/subjects" class="row" style="margin-top:10px"><%- include('partials/csrf') %><div class="field" style="flex:2 1 200px"><label>Thêm môn</label><input name="name" required placeholder="VD: Tiếng Anh giao tiếp"></div><button class="btn primary">Thêm</button></form></div>
+<div class="grid">
 <div class="card"><h2>Phòng học</h2><p class="hint">Chỉ cần khai báo nếu trung tâm có nhiều phòng – dùng để phát hiện trùng phòng.</p>
 <ul class="list-plain"><% for (const r of rooms) { %><li><form method="post" action="/settings/rooms" class="row" style="width:100%"><%- include('partials/csrf') %><input type="hidden" name="id" value="<%= r.id %>">
   <div class="field" style="flex:2 1 120px"><input name="name" value="<%= r.name %>"></div><div class="field" style="flex:1 1 80px"><input type="number" name="capacity" value="<%= r.capacity || '' %>" placeholder="Sức chứa"></div>

@@ -49,8 +49,7 @@ r.get('/logo', (req, res) => {
 });
 
 // Danh mục: môn học, phòng học
-r.get('/settings/catalog', ops, (req, res) => res.page('catalog', { title: 'Môn học & phòng học', subjects: catalog.listSubjects(req.db, true), rooms: catalog.listRooms(req.db, true) }));
-r.post('/settings/subjects', ops, h((req, res) => { catalog.saveSubject(req.db, req.user, { ...req.body, id: req.body.id ? Number(req.body.id) : null }); req.flash('success', 'Đã lưu môn học'); res.redirect(303, req.body.back || '/settings/catalog'); }));
+r.get('/settings/catalog', ops, (req, res) => res.page('catalog', { title: 'Phòng học', rooms: catalog.listRooms(req.db, true) }));
 r.post('/settings/rooms', ops, h((req, res) => { catalog.saveRoom(req.db, req.user, { ...req.body, id: req.body.id ? Number(req.body.id) : null }); req.flash('success', 'Đã lưu phòng học'); res.redirect(303, req.body.back || '/settings/catalog'); }));
 
 // Ngày nghỉ

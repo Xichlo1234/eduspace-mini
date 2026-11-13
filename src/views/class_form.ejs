@@ -4,8 +4,6 @@
 <div class="card stack"><h2>Thông tin lớp</h2>
   <div class="row">
     <div class="field" style="flex:2 1 260px"><label>Tên lớp *</label><input name="name" required value="<%= c.name || '' %>" placeholder="VD: Tiếng Anh lớp 6 – tối 2-4-6"></div>
-    <div class="field"><label>Môn học / chương trình</label><select name="subject_id"><option value="">—</option><% for (const s of subjects) { %><option value="<%= s.id %>" <%= String(c.subject_id) === String(s.id) ? 'selected' : '' %>><%= s.name %></option><% } %></select>
-      <span class="hint"><a href="/settings/catalog">+ thêm môn</a></span></div>
   </div>
   <div class="row">
     <div class="field"><label>Giáo viên phụ trách</label><select name="teacher_id"><option value="">—</option><% for (const t of teachers) { %><option value="<%= t.id %>" <%= String(c.teacher_id) === String(t.id) ? 'selected' : '' %>><%= t.full_name %></option><% } %></select>

@@ -242,7 +242,7 @@ function enroll(db, user, input) {
   if (input.mode === 'waiting') {
     const cls = input.class_id ? B.getClassRow(db, Number(input.class_id)) : null;
     const id = Number(db.prepare("INSERT INTO enrollments(student_id, class_id, subject_id, status, note, created_by) VALUES (?,?,?,'waiting',?,?)")
-      .run(student_id, cls ? cls.id : null, input.subject_id ? Number(input.subject_id) : (cls ? cls.subject_id : null), String(input.note || ''), user.id).lastInsertRowid);
+      .run(student_id, cls ? cls.id : null, require('./catalog').defaultSubjectId(db), String(input.note || ''), user.id).lastInsertRowid);
     event(db, user, id, 'waitlist', null, 'waiting', D.todayVN(), input.note);
     return { enrollment_id: id, waiting: true };
   }

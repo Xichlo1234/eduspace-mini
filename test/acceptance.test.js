@@ -103,7 +103,7 @@ test('Bấm xác nhận thu tiền hai lần không sinh hai giao dịch; không
 test('Một học sinh học hai lớp không trùng hồ sơ; hai anh chị em chung SĐT phụ huynh có hai hồ sơ', () => {
   const ctx = setup(); const { db, owner } = ctx;
   const c1 = monthlyClass(ctx);
-  const c2 = classes.createClass(db, owner, { name: 'Toán 6', teacher_id: ctx.t2, room_id: ctx.room2, start_date: '01/09/2026', fee_type: 'monthly', fee_amount: '600000',
+  const c2 = classes.createClass(db, owner, { name: 'Tiếng Anh Movers', teacher_id: ctx.t2, room_id: ctx.room2, start_date: '01/09/2026', fee_type: 'monthly', fee_amount: '600000',
     slots: [{ weekday: 6, start_time: '08:00', end_time: '09:30' }] });
   const sid = students.createStudent(db, owner, { full_name: 'Lê Minh Khoa', parent_phone: '0912 345 678' });
   E.enroll(db, owner, { student_id: sid, class_id: c1, start_date: '01/09/2026' });
@@ -190,7 +190,7 @@ test('Chuyển lớp: giữ lịch sử, chỉ chuyển phần đã đóng chưa
 
 test('Bảo lưu và quay lại: lưu số buổi/giá trị còn lại, dừng phát sinh phí, không tính trùng tiền', () => {
   const ctx = setup(); const { db, owner } = ctx;
-  const p = classes.createClass(db, owner, { name: 'Piano gói 8 buổi', teacher_id: ctx.t1, room_id: ctx.room, start_date: '01/09/2026', fee_type: 'package', fee_amount: '100000', package_sessions: 8,
+  const p = classes.createClass(db, owner, { name: 'Kèm 1-1 gói 8 buổi', teacher_id: ctx.t1, room_id: ctx.room, start_date: '01/09/2026', fee_type: 'package', fee_amount: '100000', package_sessions: 8,
     excused_absence_charged: '0', unexcused_absence_charged: '1', slots: [{ weekday: 3, start_time: '17:00', end_time: '18:00' }, { weekday: 5, start_time: '17:00', end_time: '18:00' }] });
   const sid = students.createStudent(db, owner, { full_name: 'Vũ Bảo Ngọc' });
   const r = E.enroll(db, owner, { student_id: sid, class_id: p, start_date: '01/09/2026' });
@@ -247,7 +247,7 @@ test('Giáo viên dạy thay được tính đúng số buổi thực tế; bu�
 test('Phân quyền: giáo viên không xem báo cáo, chỉ điểm danh lớp được phân công; nhân viên cần quyền để chi/hủy', () => {
   const ctx = setup(); const { db, owner } = ctx;
   const c1 = monthlyClass(ctx);
-  const c2 = classes.createClass(db, owner, { name: 'Toán', teacher_id: ctx.t2, room_id: ctx.room2, start_date: '01/09/2026', fee_type: 'monthly', fee_amount: '500000',
+  const c2 = classes.createClass(db, owner, { name: 'Tiếng Anh Flyers', teacher_id: ctx.t2, room_id: ctx.room2, start_date: '01/09/2026', fee_type: 'monthly', fee_amount: '500000',
     slots: [{ weekday: 6, start_time: '08:00', end_time: '09:00' }] });
   const tu = userOf(db, users.createUser(db, owner, { username: 'gvan', full_name: 'GV An', password: 'GiaoVien1', role: 'teacher', teacher_id: ctx.t1 }));
   const st = userOf(db, users.createUser(db, owner, { username: 'nhanvien', full_name: 'NV', password: 'NhanVien1', role: 'staff' }));

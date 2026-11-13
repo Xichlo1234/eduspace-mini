@@ -13,7 +13,6 @@ function setupChecklist(db) {
   const n = (sql) => db.prepare(sql).get().n;
   const steps = [
     { key: 'center', label: 'Nhập tên & thông tin trung tâm', done: s.center_name !== settings.DEFAULTS.center_name, href: '/settings' },
-    { key: 'subject', label: 'Thêm môn học / chương trình', done: n('SELECT COUNT(*) n FROM subjects') > 0, href: '/settings/catalog' },
     { key: 'teacher', label: 'Thêm giáo viên (có thể là chính bạn)', done: n('SELECT COUNT(*) n FROM teachers') > 0, href: '/teachers' },
     { key: 'holiday', label: 'Khai báo ngày nghỉ, ngày lễ', done: n('SELECT COUNT(*) n FROM holidays') > 0, href: '/settings/holidays', optional: true },
     { key: 'class', label: 'Tạo lớp đầu tiên', done: n('SELECT COUNT(*) n FROM classes') > 0, href: '/classes/new' },

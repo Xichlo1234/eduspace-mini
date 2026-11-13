@@ -167,7 +167,7 @@ function readClassInput(db, input, existing = null) {
   const teacher_rate = input.teacher_rate === '' || input.teacher_rate == null ? null : mustMoney(input.teacher_rate, 'Đơn giá tiền dạy', { allowZero: true });
   return {
     name, fee_type, start_date, end_date, total_sessions, fee_amount, package_sessions, max_students, teacher_rate,
-    subject_id: input.subject_id ? Number(input.subject_id) : null,
+    subject_id: require('./catalog').defaultSubjectId(db), // trung tâm chỉ dạy tiếng Anh
     teacher_id: input.teacher_id ? Number(input.teacher_id) : null,
     room_id: input.room_id ? Number(input.room_id) : null,
     billing_timing,

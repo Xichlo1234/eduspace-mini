@@ -37,7 +37,7 @@ npm start
 Mở http://localhost:3000. Lần đầu, ứng dụng yêu cầu **tạo tài khoản chủ trung tâm** (tự đặt mật khẩu – không có mật khẩu mặc định). Trang Tổng quan hiển thị danh sách “Bắt đầu nhanh”:
 
 1. Cài đặt → nhập tên trung tâm, logo, địa chỉ, thông tin chuyển khoản, chính sách.
-2. Cài đặt → Môn học & phòng (phòng chỉ cần khi có nhiều phòng).
+2. Cài đặt → Phòng học (chỉ cần khi có nhiều phòng). Trung tâm chỉ dạy tiếng Anh nên không cần khai báo môn học: mọi lớp tự gắn môn Tiếng Anh, phân biệt chương trình bằng tên lớp (Starters, Movers, IELTS…).
 3. Giáo viên → thêm giáo viên (nếu tự dạy, thêm chính mình) và đơn giá/buổi.
 4. Cài đặt → Ngày nghỉ (lễ, Tết).
 5. Lớp học → Tạo lớp: chọn lịch trong tuần, hình thức & mức học phí → hệ thống tự sinh buổi học.

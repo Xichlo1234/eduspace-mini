@@ -53,9 +53,9 @@ test('Lớp tháng thu cuối kỳ: xếp lớp chưa lập học phí; cuối t
 
 test('Lớp theo buổi thu cuối kỳ: tính theo số buổi thực học, vắng theo cấu hình', () => {
   const ctx = setup(); const { db, owner } = ctx;
-  const cid = classes.createClass(db, owner, { name: 'Piano trả sau', teacher_id: ctx.t2, start_date: '01/09/2026', fee_type: 'package', fee_amount: '100000', billing_timing: 'postpaid',
+  const cid = classes.createClass(db, owner, { name: 'Kèm 1-1 trả sau', teacher_id: ctx.t2, start_date: '01/09/2026', fee_type: 'package', fee_amount: '100000', billing_timing: 'postpaid',
     excused_absence_charged: '0', unexcused_absence_charged: '1', slots: [{ weekday: 3, start_time: '17:00', end_time: '18:00' }, { weekday: 5, start_time: '17:00', end_time: '18:00' }] });
-  const sid = students.createStudent(db, owner, { full_name: 'HS piano' });
+  const sid = students.createStudent(db, owner, { full_name: 'HS kèm 1-1' });
   const r = E.enroll(db, owner, { student_id: sid, class_id: cid, start_date: '01/09/2026' });
   assert.equal(r.invoice, null);
   const sess = db.prepare("SELECT id FROM class_sessions WHERE class_id = ? AND date LIKE '2026-09-%' ORDER BY date").all(cid);

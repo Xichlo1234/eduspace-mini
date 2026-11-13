@@ -19,7 +19,6 @@
     <label class="check"><input type="checkbox" name="force" value="1" <%= v.force ? 'checked' : '' %>> Vẫn xếp nếu lớp đã đủ sĩ số</label>
   </div>
   <div data-mode="waiting" class="row">
-    <div class="field"><label>Môn/chương trình mong muốn</label><select name="subject_id"><option value="">—</option><% for (const sj of subjects) { %><option value="<%= sj.id %>"><%= sj.name %></option><% } %></select></div>
     <div class="field" style="flex:2 1 260px"><label>Ghi chú (khung giờ mong muốn…)</label><input name="note" value="<%= v.note || '' %>"></div>
   </div>
   <% if (preview && preview.postpaid) { %>

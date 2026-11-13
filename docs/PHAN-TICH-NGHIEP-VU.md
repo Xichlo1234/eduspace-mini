@@ -30,7 +30,7 @@ Nghiệp vụ phát sinh: đổi lịch / hủy buổi / dạy thay, chuyển l�
 | Miễn giảm, hủy/điều chỉnh giao dịch | ✔ | Khi được cấp quyền | ✘ |
 | Báo cáo tài chính | ✔ | Khi được cấp quyền | ✘ |
 | Xác nhận chi tiền dạy | ✔ | ✘ | Chỉ xem tiền dạy của mình |
-| Cài đặt, tài khoản, sao lưu/khôi phục | ✔ | Môn học, phòng, ngày nghỉ | ✘ |
+| Cài đặt, tài khoản, sao lưu/khôi phục | ✔ | Phòng học, ngày nghỉ | ✘ |
 
 Chủ trung tâm tự làm được mọi quy trình mà không cần tạo tài khoản nhân viên. Không có mật khẩu mặc định: chủ tự tạo tài khoản ở lần chạy đầu; tài khoản do chủ tạo phải đổi mật khẩu khi đăng nhập lần đầu.
 
@@ -44,7 +44,7 @@ Chủ trung tâm tự làm được mọi quy trình mà không cần tạo tài
 4. **Học phí & thu chi** – công nợ (còn nợ/quá hạn/đã đủ), khoản phải thu (diễn giải cách tính, lịch sử điều chỉnh, phân bổ), thu tiền, phiếu thu (in/lưu PDF khổ A5), tạo học phí hàng loạt (xem trước + ngoại lệ), sổ thu chi.
 5. **Giáo viên** – danh sách, hồ sơ (lịch dạy, buổi đã dạy), tiền dạy theo tháng + xác nhận chi.
 6. **Báo cáo** – thực thu, thực chi, chênh lệch thu–chi tiền, công nợ, trả trước, bảo lưu, theo lớp, chuyên cần; xuất Excel.
-7. **Cài đặt** – thông tin trung tâm & logo, chính sách, mẫu phiếu thu, mẫu tin nhắn, môn học & phòng, ngày nghỉ, tài khoản, sao lưu/khôi phục, nhật ký thao tác.
+7. **Cài đặt** – thông tin trung tâm & logo, chính sách, mẫu phiếu thu, mẫu tin nhắn, phòng học, ngày nghỉ, tài khoản, sao lưu/khôi phục, nhật ký thao tác.
 
 ## 4. Mô hình dữ liệu (SQLite – `src/schema.sql`)
 
@@ -125,3 +125,7 @@ Chạy `npm test` (22 kiểm thử, đều đạt – gồm 5 kiểm thử thu c
 | Giáo viên không truy cập báo cáo thu chi | `http` – “Giáo viên không truy cập được báo cáo…” (11 đường dẫn trả 403) |
 | Bấm xác nhận thu tiền hai lần không sinh hai giao dịch | `acceptance` + `http` (hai POST đồng thời → 1 phiếu) |
 | Bổ sung | đổi lịch không sửa buổi đã hoàn thành; phát hiện trùng GV/phòng; miễn giảm có lý do; hủy phiếu giữ dấu vết; chính sách vắng; CSRF; duyệt toàn bộ trang không lỗi |
+
+## 7. Phạm vi môn học
+
+Trung tâm chỉ dạy **tiếng Anh**. Ứng dụng không có màn hình quản lý môn học: mọi lớp tự gắn môn "Tiếng Anh", chương trình (Starters, Movers, Flyers, giao tiếp, IELTS, kèm 1-1…) phân biệt bằng tên lớp. Khi nâng cấp từ phiên bản trước, các môn khác (nếu có) được gom về "Tiếng Anh"; lớp, học sinh và lịch sử thu tiền giữ nguyên.

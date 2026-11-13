@@ -25,6 +25,16 @@ function migrate(db) {
   if (!cols.has('billing_timing')) {
     db.exec("ALTER TABLE classes ADD COLUMN billing_timing TEXT NOT NULL DEFAULT 'prepaid' CHECK (billing_timing IN ('prepaid','postpaid'))");
   }
+  // Trung tâm chỉ dạy tiếng Anh: gom mọi lớp/đăng ký về môn "Tiếng Anh", bỏ các môn khác
+  if (db.prepare("SELECT 1 FROM subjects WHERE name <> 'Tiếng Anh' LIMIT 1").get() || db.prepare("SELECT 1 FROM classes WHERE subject_id IS NULL LIMIT 1").get()) {
+    db.transaction(() => {
+      db.prepare("INSERT INTO subjects(name) SELECT 'Tiếng Anh' WHERE NOT EXISTS (SELECT 1 FROM subjects WHERE name = 'Tiếng Anh')").run();
+      const en = db.prepare("SELECT id FROM subjects WHERE name = 'Tiếng Anh'").get().id;
+      db.prepare('UPDATE classes SET subject_id = ?').run(en);
+      db.prepare('UPDATE enrollments SET subject_id = ? WHERE subject_id IS NOT NULL').run(en);
+      db.prepare('DELETE FROM subjects WHERE id <> ?').run(en);
+    })();
+  }
 }
 
 /** Sinh mã tăng dần duy nhất, vd nextCode(db,'HS','HS',5) -> HS00001 */

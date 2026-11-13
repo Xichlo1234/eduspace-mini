@@ -35,17 +35,14 @@ const owner = db.prepare('SELECT * FROM users WHERE id = ?').get(ownerId);
 for (const [k, v] of Object.entries({ center_name: 'Trung tâm Ánh Dương (DEMO)', center_address: '12 Lê Lợi, P. Bến Thành, Q.1, TP.HCM', center_phone: '0909 123 456',
   bank_info: 'Vietcombank 0123456789 – NGUYEN THU HA' })) settings.set(db, k, v);
 
-const sEn = catalog.saveSubject(db, owner, { name: 'Tiếng Anh thiếu nhi' });
-const sIelts = catalog.saveSubject(db, owner, { name: 'IELTS' });
-const sMath = catalog.saveSubject(db, owner, { name: 'Toán' });
-const sPiano = catalog.saveSubject(db, owner, { name: 'Piano' });
+const sEn = catalog.defaultSubjectId(db); // trung tâm chỉ dạy tiếng Anh
 const r1 = catalog.saveRoom(db, owner, { name: 'P.101', capacity: 15 });
 const r2 = catalog.saveRoom(db, owner, { name: 'P.102', capacity: 12 });
-const r3 = catalog.saveRoom(db, owner, { name: 'Phòng nhạc', capacity: 4 });
+const r3 = catalog.saveRoom(db, owner, { name: 'Phòng 1-1', capacity: 4 });
 const tLan = catalog.saveTeacher(db, owner, { full_name: 'Trần Thị Lan', phone: '0912000111', default_rate: '250000' });
 const tMinh = catalog.saveTeacher(db, owner, { full_name: 'Lê Văn Minh', phone: '0912000222', default_rate: '300000' });
 const tHa = catalog.saveTeacher(db, owner, { full_name: 'Nguyễn Thu Hà', phone: '0909123456', default_rate: '0', note: 'Chủ trung tâm tự đứng lớp' });
-const tPiano = catalog.saveTeacher(db, owner, { full_name: 'Phạm Quốc Bảo', phone: '0912000333', default_rate: '150000' });
+const tBao = catalog.saveTeacher(db, owner, { full_name: 'Phạm Quốc Bảo', phone: '0912000333', default_rate: '150000' });
 users.createUser(db, owner, { username: 'nhanvien.demo', full_name: 'Võ Mỹ Linh (nhân viên)', password: PW, role: 'staff', perm_reports: '0' });
 users.createUser(db, owner, { username: 'gv.lan', full_name: 'Trần Thị Lan', password: PW, role: 'teacher', teacher_id: tLan });
 db.prepare('UPDATE users SET must_change_password = 0').run(); // tài khoản demo không bắt đổi mật khẩu
@@ -59,11 +56,11 @@ const cA = classes.createClass(db, owner, { name: 'Tiếng Anh Starters – tố
   fee_type: 'monthly', fee_amount: '800000', slots: [{ weekday: 1, start_time: '18:00', end_time: '19:30' }, { weekday: 3, start_time: '18:00', end_time: '19:30' }] });
 const cB = classes.createClass(db, owner, { name: 'Tiếng Anh Movers – tối 3-5', billing_timing: 'prepaid', subject_id: sEn, teacher_id: tLan, room_id: r1, max_students: 12, start_date: start,
   fee_type: 'monthly', fee_amount: '900000', slots: [{ weekday: 2, start_time: '18:00', end_time: '19:30' }, { weekday: 4, start_time: '18:00', end_time: '19:30' }] });
-const cC = classes.createClass(db, owner, { name: 'IELTS 5.5 – 24 buổi', billing_timing: 'prepaid', subject_id: sIelts, teacher_id: tMinh, room_id: r2, max_students: 10, start_date: D.addDays(start, 7),
+const cC = classes.createClass(db, owner, { name: 'IELTS 5.5 – 24 buổi', billing_timing: 'prepaid', subject_id: sEn, teacher_id: tMinh, room_id: r2, max_students: 10, start_date: D.addDays(start, 7),
   fee_type: 'course', fee_amount: '7200000', total_sessions: 24, slots: [{ weekday: 2, start_time: '19:45', end_time: '21:15' }, { weekday: 6, start_time: '19:45', end_time: '21:15' }] });
-const cD = classes.createClass(db, owner, { name: 'Toán 6 nâng cao – sáng CN (thu cuối tháng)', billing_timing: 'postpaid', subject_id: sMath, teacher_id: tHa, room_id: r2, max_students: 15, start_date: start,
+const cD = classes.createClass(db, owner, { name: 'Tiếng Anh giao tiếp – sáng CN (thu cuối tháng)', billing_timing: 'postpaid', subject_id: sEn, teacher_id: tHa, room_id: r2, max_students: 15, start_date: start,
   fee_type: 'monthly', fee_amount: '600000', excused_absence_charged: '0', slots: [{ weekday: 7, start_time: '08:00', end_time: '10:00' }] });
-const cE = classes.createClass(db, owner, { name: 'Piano cơ bản – gói 8 buổi', billing_timing: 'prepaid', subject_id: sPiano, teacher_id: tPiano, room_id: r3, max_students: 4, start_date: start,
+const cE = classes.createClass(db, owner, { name: 'Kèm 1-1 tiếng Anh – gói 8 buổi', billing_timing: 'prepaid', subject_id: sEn, teacher_id: tBao, room_id: r3, max_students: 4, start_date: start,
   fee_type: 'package', fee_amount: '200000', package_sessions: 8, excused_absence_charged: '0', slots: [{ weekday: 6, start_time: '17:00', end_time: '18:00' }, { weekday: 7, start_time: '15:00', end_time: '16:00' }] });
 
 const ho = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Võ', 'Đặng', 'Bùi', 'Đỗ', 'Huỳnh'];
@@ -153,10 +150,10 @@ try { E.reserve(db, owner, { enrollment_id: pe.id, start_date: D.addDays(today, 
 
 // học sinh mới chờ lớp, có đặt cọc
 const w = students.createStudent(db, owner, { full_name: 'Đinh Hoàng Yến', parent_name: 'Đinh Văn Toàn', parent_phone: '0938111222', entry_level: 'Mới bắt đầu' });
-E.enroll(db, owner, { student_id: w, mode: 'waiting', subject_id: sIelts, note: 'Muốn học tối 3-5' });
+E.enroll(db, owner, { student_id: w, mode: 'waiting', subject_id: sEn, note: 'Muốn học tối 3-5' });
 B.recordReceipt(db, owner, { student_id: w, amount: '1000000', method: 'transfer', paid_date: today, note: 'Đặt cọc giữ chỗ khóa IELTS', idempotency_key: 'seed-deposit' });
 const w2 = students.createStudent(db, owner, { full_name: 'Mai Anh Thư', parent_name: 'Mai Văn Lộc', parent_phone: '0938333444' });
-E.enroll(db, owner, { student_id: w2, mode: 'waiting', subject_id: sEn, note: 'Chờ lớp sáng thứ 7' });
+E.enroll(db, owner, { student_id: w2, mode: 'waiting', subject_id: sEn, note: 'Chờ lớp Starters sáng thứ 7' });
 
 // thu chi
 const months = []; for (let m = D.monthOf(start); m <= D.monthOf(today); m = D.nextMonth(m)) months.push(m);
@@ -171,7 +168,7 @@ const book = B.createOtherInvoice(db, owner, { student_id: kids[1].id, category:
 void book;
 // chi tiền dạy tháng trước
 const prev = D.monthOf(D.addDays(D.monthStart(D.monthOf(today)), -1));
-for (const t of [tLan, tMinh, tPiano]) { try { TP.pay(db, owner, { teacher_id: t, ym: prev, date: D.minDate(`${D.monthOf(today)}-03`, today), method: 'transfer', idempotency_key: `tp-${t}-${prev}` }); } catch (e) { /* tháng không có buổi */ } }
+for (const t of [tLan, tMinh, tBao]) { try { TP.pay(db, owner, { teacher_id: t, ym: prev, date: D.minDate(`${D.monthOf(today)}-03`, today), method: 'transfer', idempotency_key: `tp-${t}-${prev}` }); } catch (e) { /* tháng không có buổi */ } }
 
 db.close();
 console.log(`Đã tạo dữ liệu mẫu: ${file}`);

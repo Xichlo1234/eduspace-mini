@@ -45,4 +45,12 @@ function saveTeacher(db, user, { id, full_name, phone, email, default_rate, note
   return Number(id);
 }
 
-module.exports = { listSubjects, saveSubject, listRooms, saveRoom, listTeachers, getTeacher, saveTeacher };
+/** Trung tâm chỉ dạy tiếng Anh: mọi lớp gắn môn "Tiếng Anh" (tự tạo nếu chưa có) */
+const DEFAULT_SUBJECT = 'Tiếng Anh';
+function defaultSubjectId(db) {
+  const r = db.prepare('SELECT id FROM subjects WHERE name = ?').get(DEFAULT_SUBJECT);
+  if (r) return r.id;
+  return Number(db.prepare('INSERT INTO subjects(name) VALUES (?)').run(DEFAULT_SUBJECT).lastInsertRowid);
+}
+
+module.exports = { DEFAULT_SUBJECT, defaultSubjectId, listSubjects, saveSubject, listRooms, saveRoom, listTeachers, getTeacher, saveTeacher };
