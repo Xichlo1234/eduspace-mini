@@ -8,6 +8,8 @@
 
 Phân tích nghiệp vụ, mô hình dữ liệu, chính sách học phí và kết quả kiểm thử: **[docs/PHAN-TICH-NGHIEP-VU.md](docs/PHAN-TICH-NGHIEP-VU.md)**.
 
+**Hồ sơ dự án (toàn bộ quá trình, quyết định, bản đồ mã – đọc file này thay vì đọc lại mã):** **[docs/HO-SO-DU-AN.md](docs/HO-SO-DU-AN.md)**.
+
 ## Chạy thử nhanh với dữ liệu mẫu
 
 Yêu cầu: Node.js 22.13 trở lên (khuyên dùng bản LTS mới nhất; dùng SQLite có sẵn trong Node, không cần Python hay Visual Studio) (https://nodejs.org). Không bắt buộc cài Git: có thể tải mã nguồn bằng nút **Code → Download ZIP** trên GitHub rồi giải nén. Các lệnh dưới đây chạy được trên Windows (Command Prompt), macOS và Linux, chạy trong thư mục đã giải nén.
