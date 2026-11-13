@@ -7,7 +7,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const Database = require('better-sqlite3');
+const Database = require('../sqlite');
 
 function backupDir(dbFile) { return path.join(path.dirname(path.resolve(dbFile)), 'backups'); }
 function stamp() { return new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19); }
@@ -40,7 +40,7 @@ function list(db) {
 function validateFile(file) {
   let x;
   try {
-    x = new Database(file, { readonly: true, fileMustExist: true });
+    x = new Database(file, { readonly: true });
     const tables = new Set(x.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((r) => r.name));
     for (const t of ['users', 'students', 'classes', 'invoices', 'receipts']) if (!tables.has(t)) return `File không phải bản sao lưu hợp lệ (thiếu bảng ${t})`;
     if (!x.prepare("SELECT 1 FROM users WHERE role = 'owner'").get()) return 'Bản sao lưu không có tài khoản chủ trung tâm';

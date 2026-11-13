@@ -12,10 +12,11 @@
     "backup": "node scripts/backup.js",
     "test": "node --test test/*.test.js"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=22.13"
+  },
   "license": "MIT",
   "dependencies": {
-    "better-sqlite3": "^13.1.1",
     "cookie-parser": "^1.4.7",
     "ejs": "^7.0.2",
     "exceljs": "^4.4.0",

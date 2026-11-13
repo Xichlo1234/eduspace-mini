@@ -4,13 +4,13 @@
 
 - Giao diện tiếng Việt, dùng tốt trên máy tính và điện thoại.
 - Tiền VND, ngày `dd/mm/yyyy`, múi giờ Việt Nam.
-- Một ứng dụng Node.js + một file CSDL SQLite: chi phí thấp, dễ sao lưu, dễ bảo trì.
+- Một ứng dụng Node.js + một file CSDL SQLite (dùng `node:sqlite` có sẵn, không cần biên dịch): chi phí thấp, dễ sao lưu, dễ bảo trì.
 
 Phân tích nghiệp vụ, mô hình dữ liệu, chính sách học phí và kết quả kiểm thử: **[docs/PHAN-TICH-NGHIEP-VU.md](docs/PHAN-TICH-NGHIEP-VU.md)**.
 
 ## Chạy thử nhanh với dữ liệu mẫu
 
-Yêu cầu: Node.js 20 trở lên (https://nodejs.org). Không bắt buộc cài Git: có thể tải mã nguồn bằng nút **Code → Download ZIP** trên GitHub rồi giải nén. Các lệnh dưới đây chạy được trên Windows (Command Prompt), macOS và Linux, chạy trong thư mục đã giải nén.
+Yêu cầu: Node.js 22.13 trở lên (khuyên dùng bản LTS mới nhất; dùng SQLite có sẵn trong Node, không cần Python hay Visual Studio) (https://nodejs.org). Không bắt buộc cài Git: có thể tải mã nguồn bằng nút **Code → Download ZIP** trên GitHub rồi giải nén. Các lệnh dưới đây chạy được trên Windows (Command Prompt), macOS và Linux, chạy trong thư mục đã giải nén.
 
 ```bash
 npm install
