@@ -10,7 +10,7 @@ Phân tích nghiệp vụ, mô hình dữ liệu, chính sách học phí và k�
 
 ## Chạy thử nhanh với dữ liệu mẫu
 
-Yêu cầu: Node.js 20 trở lên.
+Yêu cầu: Node.js 20 trở lên (https://nodejs.org). Không bắt buộc cài Git: có thể tải mã nguồn bằng nút **Code → Download ZIP** trên GitHub rồi giải nén. Các lệnh dưới đây chạy được trên Windows (Command Prompt), macOS và Linux, chạy trong thư mục đã giải nén.
 
 ```bash
 npm install
