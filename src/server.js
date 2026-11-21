@@ -7,7 +7,7 @@ const backup = require('./services/backup');
 
 const file = path.resolve(process.env.DATA_FILE || path.join(__dirname, '..', 'data', 'app.db'));
 const demo = /demo/i.test(path.basename(file)) || process.env.DEMO === '1';
-const state = { db: openDb(file), demo };
+const state = { db: openDb(file), demo, env: process.env };
 const port = Number(process.env.PORT || 3000);
 
 function daily() {

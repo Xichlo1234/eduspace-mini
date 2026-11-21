@@ -66,6 +66,7 @@ function createApp(state) {
     if (req.method !== 'POST') return next();
     if (req.is('multipart/form-data')) return next(); // kiểm tra sau khi multer đọc form
     if (!req.user) return next();
+    if (['/login', '/setup', '/recover'].includes(req.path)) return next(); // các trang này tự kiểm tra mã chống giả mạo riêng
     if (req.body._csrf !== req.user.csrf) return next(new AppError('Phiên làm việc đã hết hạn, vui lòng tải lại trang', 403));
     next();
   });

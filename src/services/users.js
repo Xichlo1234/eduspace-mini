@@ -50,6 +50,15 @@ function resetPassword(db, actor, id, password) {
   db.prepare('DELETE FROM auth_sessions WHERE user_id = ?').run(id);
   audit.log(db, actor, 'user.reset_password', 'user', id);
 }
+/** Đặt lại mật khẩu chủ trung tâm (dùng mã khôi phục hoặc lệnh trên máy). Trả về tên đăng nhập. */
+function resetOwnerPassword(db, password) {
+  const err = validatePassword(password); assert(!err, err);
+  const u = db.prepare("SELECT * FROM users WHERE role = 'owner'").get(); assert(u, 'Chưa có tài khoản chủ trung tâm', 404);
+  db.prepare('UPDATE users SET password_hash = ?, active = 1, must_change_password = 0 WHERE id = ?').run(hashPassword(password), u.id);
+  db.prepare('DELETE FROM auth_sessions WHERE user_id = ?').run(u.id);
+  audit.log(db, null, 'user.reset_password', 'user', u.id, 'Khôi phục mật khẩu chủ bằng mã khôi phục');
+  return u.username;
+}
 function changePassword(db, user, { current, password }) {
   const u = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
   assert(verifyPassword(current, u.password_hash), 'Mật khẩu hiện tại không đúng');
@@ -82,4 +91,4 @@ function list(db) {
   return db.prepare('SELECT u.id, u.username, u.full_name, u.role, u.teacher_id, u.perm_expense, u.perm_void, u.perm_reports, u.active, u.created_at, t.full_name AS teacher_name FROM users u LEFT JOIN teachers t ON t.id = u.teacher_id ORDER BY u.role, u.full_name').all();
 }
 
-module.exports = { ROLES, hasAnyUser, createOwner, createUser, updateUser, resetPassword, changePassword, login, sessionUser, logout, list };
+module.exports = { ROLES, hasAnyUser, createOwner, createUser, updateUser, resetPassword, resetOwnerPassword, changePassword, login, sessionUser, logout, list };

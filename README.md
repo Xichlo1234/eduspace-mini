@@ -80,9 +80,11 @@ npm run backup
 - **Khôi phục:** Cài đặt → Sao lưu → chọn file `.db` → gõ `KHOI PHUC`. Hệ thống kiểm tra file, **tự sao lưu dữ liệu hiện tại** (`before-restore-*.db`) rồi mới thay thế; mọi người đăng nhập lại.
 - **Khôi phục thủ công khi máy hỏng:** cài lại ứng dụng, dừng ứng dụng, chép file sao lưu thành `data/app.db`, khởi động lại.
 
-### Khôi phục mật khẩu chủ
+### Quên mật khẩu
 
-Chạy trên máy chủ:
+- **Nhân viên, giáo viên:** chủ trung tâm đặt lại ở Cài đặt → Tài khoản.
+- **Chủ trung tâm (Cloudflare hoặc máy):** đặt secret/biến môi trường `RECOVERY_CODE` (chuỗi bí mật ≥ 12 ký tự), mở trang `/recover` (link “Quên mật khẩu” ở trang đăng nhập), nhập mã và mật khẩu mới. Trên Cloudflare: Worker → Settings → Variables and Secrets → Add → Secret.
+- **Chủ trung tâm, chạy trên máy:** cũng có thể chạy lệnh:
 
 ```bash
 node scripts/reset-owner-password.js "MatKhauMoi123"

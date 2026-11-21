@@ -52,6 +52,7 @@ Lệnh cuối in ra địa chỉ `https://eduspace-mini.<ten-ban>.workers.dev`.
 - **Tên miền riêng (tuỳ chọn):** Worker `eduspace-mini` → **Settings → Domains & Routes → Add → Custom domain** → nhập ví dụ `quanly.tentrungtam.vn` (tên miền phải đang dùng Cloudflare DNS).
 - **Thêm lớp bảo vệ (khuyên dùng):** Zero Trust → **Access → Applications → Add → Self-hosted**, nhập địa chỉ trên, chính sách *Allow* theo email của chủ, nhân viên, giáo viên (đăng nhập bằng mã gửi qua email; miễn phí đến 50 người).
 - **Chuyển dữ liệu đang dùng trên máy lên Cloudflare:** trên bản đang chạy ở máy → *Cài đặt → Sao lưu → Tải bản sao lưu (.json)*; trên bản Cloudflare → tạo tài khoản chủ tạm → *Cài đặt → Sao lưu → Khôi phục từ file JSON* → đăng nhập lại bằng tài khoản cũ.
+- **Quên mật khẩu chủ trung tâm:** Worker `eduspace-mini` → **Settings → Variables and Secrets → Add** → Type **Secret**, tên `RECOVERY_CODE`, giá trị là một chuỗi bí mật ≥ 12 ký tự → **Deploy**. Mở `https://…workers.dev/recover`, nhập mã đó và mật khẩu mới. Dùng xong nên xóa hoặc đổi secret. (Nhân viên/giáo viên quên mật khẩu: chủ đặt lại ở Cài đặt → Tài khoản.)
 - **Sao lưu:** Cloudflare tự lưu lịch sử 30 ngày cho Durable Object. Ngoài ra nên vào *Cài đặt → Sao lưu → Tải bản sao lưu (.json)* **mỗi tuần** và cất lên Google Drive.
 - **Xem lỗi khi cần:** Worker → **Observability / Logs**.
 

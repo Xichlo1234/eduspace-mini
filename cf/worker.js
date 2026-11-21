@@ -24,6 +24,7 @@ export class EduspaceApp extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     ctx.blockConcurrencyWhile(async () => {
+      state.env = env; // RECOVERY_CODE (mã khôi phục mật khẩu chủ) đặt trong Settings → Variables and Secrets
       state.db = initDb(new DoDatabase(ctx.storage), schemaSql);
       try { classes.extendAll(state.db); } catch (e) { console.error('Gia hạn lịch lỗi', e); }
     });

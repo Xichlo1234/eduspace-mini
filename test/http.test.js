@@ -102,4 +102,20 @@ test('Duyệt toàn bộ trang bằng tài khoản chủ trung tâm: không có 
   assert.ok(seen.size > 40, `đã duyệt ${seen.size} trang`);
 });
 
+test('Quên mật khẩu chủ: khôi phục bằng mã RECOVERY_CODE (tắt khi chưa đặt mã, sai mã bị từ chối)', async () => {
+  const agent = request.agent(app);
+  const off = await agent.get('/recover');
+  assert.equal(off.status, 200); assert.match(off.text, /RECOVERY_CODE/); assert.doesNotMatch(off.text, /name="code"/);
+  state.env = { RECOVERY_CODE: 'MaKhoiPhuc-Test-2026' };
+  const page = await agent.get('/recover');
+  const csrf = page.text.match(/name="_csrf" value="([^"]+)"/)[1];
+  const bad = await agent.post('/recover').type('form').send({ _csrf: csrf, code: 'sai-ma-khoi-phuc', password: 'MoiMoi2026', password2: 'MoiMoi2026' });
+  assert.equal(bad.status, 401);
+  const good = await agent.post('/recover').type('form').send({ _csrf: csrf, code: 'MaKhoiPhuc-Test-2026', password: 'MoiMoi2026', password2: 'MoiMoi2026' });
+  assert.equal(good.status, 200); assert.match(good.text, /chu\.demo/);
+  await login('chu.demo', 'MoiMoi2026');
+  await assert.rejects(login('chu.demo', 'Demo2026'));
+  state.env = {};
+});
+
 test.after(() => { state.db.close(); fs.rmSync(dir, { recursive: true, force: true }); });

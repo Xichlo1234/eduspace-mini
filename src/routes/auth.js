@@ -70,6 +70,36 @@ r.post('/logout', (req, res) => {
   res.redirect('/login');
 });
 
+// ---- Khôi phục mật khẩu CHỦ TRUNG TÂM bằng mã bí mật RECOVERY_CODE
+// Cloudflare: Worker → Settings → Variables and Secrets → thêm Secret RECOVERY_CODE. Máy: biến môi trường RECOVERY_CODE.
+// Không đặt mã = trang này tắt. Đặt lại xong nên xóa/đổi mã.
+function recoveryCode(req) {
+  const env = (req.state && req.state.env) || {};
+  const c = String(env.RECOVERY_CODE || '').trim();
+  return c.length >= 12 ? c : null;
+}
+function sameCode(a, b) {
+  const x = Buffer.from(String(a)); const y = Buffer.from(String(b));
+  return x.length === y.length && crypto.timingSafeEqual(x, y);
+}
+r.get('/recover', (req, res) => {
+  res.render('recover', { pcsrf: preCsrf(req, res), enabled: !!recoveryCode(req), error: null, done: null });
+});
+r.post('/recover', h((req, res) => {
+  const enabled = !!recoveryCode(req);
+  const view = (status, extra) => res.status(status).render('recover', { pcsrf: preCsrf(req, res), enabled, error: null, done: null, ...extra });
+  if (!checkPre(req)) return view(403, { error: 'Phiên hết hạn, vui lòng thử lại' });
+  if (!enabled) return view(400, { error: 'Chưa bật mã khôi phục (RECOVERY_CODE) – xem hướng dẫn bên dưới' });
+  const key = `recover|${req.ip}`;
+  if (tooMany(key)) return view(429, { error: 'Thử sai quá nhiều lần. Vui lòng thử lại sau 15 phút.' });
+  if (!sameCode(String(req.body.code || '').trim(), recoveryCode(req))) { bump(key); return view(401, { error: 'Mã khôi phục không đúng' }); }
+  if (req.body.password !== req.body.password2) return view(400, { error: 'Hai lần nhập mật khẩu mới không khớp' });
+  let username;
+  try { username = users.resetOwnerPassword(req.db, req.body.password); } catch (e) { if (e.status && e.status < 500) return view(400, { error: e.message }); throw e; }
+  attempts.delete(key);
+  view(200, { done: username });
+}));
+
 r.get('/account/password', (req, res) => {
   if (!req.user) return res.redirect('/login');
   res.page('account_password', { title: 'Đổi mật khẩu', error: null });

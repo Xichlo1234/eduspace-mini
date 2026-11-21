@@ -1,0 +1,29 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Khôi phục mật khẩu</title><link rel="stylesheet" href="/public/css/app.css"></head>
+<body><div class="auth"><div class="card">
+<h1>Khôi phục mật khẩu chủ trung tâm</h1>
+<% if (done) { %>
+  <div class="alert success">Đã đặt mật khẩu mới cho tài khoản <strong><%= done %></strong>. Các phiên đăng nhập cũ đã bị đăng xuất.</div>
+  <p class="hint">Để an toàn: vào Cloudflare xóa hoặc đổi mã <code>RECOVERY_CODE</code> sau khi dùng.</p>
+  <a class="btn primary" href="/login" style="width:100%">Đăng nhập</a>
+<% } else { %>
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+  <% if (enabled) { %>
+  <form method="post" action="/recover" class="stack">
+    <input type="hidden" name="_csrf" value="<%= pcsrf %>">
+    <div class="field"><label>Mã khôi phục</label><input name="code" required autocomplete="off"><span class="hint">Mã bạn đã đặt (biến RECOVERY_CODE).</span></div>
+    <div class="field"><label>Mật khẩu mới</label><input type="password" name="password" required minlength="8" autocomplete="new-password"><span class="hint">Ít nhất 8 ký tự, có chữ và số.</span></div>
+    <div class="field"><label>Nhập lại mật khẩu mới</label><input type="password" name="password2" required minlength="8" autocomplete="new-password"></div>
+    <button class="btn primary" style="width:100%">Đặt mật khẩu mới</button>
+  </form>
+  <% } else { %>
+  <div class="alert info">Chức năng này đang tắt. Bật bằng cách đặt <strong>mã khôi phục</strong> (chỉ chủ tài khoản Cloudflare làm được):</div>
+  <ol class="small">
+    <li>Vào dash.cloudflare.com → <strong>Workers & Pages</strong> → chọn <strong>eduspace-mini</strong> → <strong>Settings</strong> → <strong>Variables and Secrets</strong> → <strong>Add</strong>.</li>
+    <li>Type: <strong>Secret</strong> · Variable name: <code>RECOVERY_CODE</code> · Value: một chuỗi bí mật ≥ 12 ký tự (ví dụ <code>KhoiPhuc-2026-AnhDuong</code>) → <strong>Deploy</strong>.</li>
+    <li>Chờ ~1 phút rồi tải lại trang này, nhập mã vừa đặt và mật khẩu mới.</li>
+  </ol>
+  <p class="hint">Chạy trên máy (không phải Cloudflare): dùng lệnh <code>node scripts/reset-owner-password.js "MatKhauMoi123"</code> trong thư mục ứng dụng.</p>
+  <% } %>
+  <p style="margin-top:12px"><a href="/login">← Quay lại đăng nhập</a></p>
+<% } %>
+</div></div></body></html>

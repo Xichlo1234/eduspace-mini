@@ -9,7 +9,7 @@ Tóm tắt nhanh:
 - Lớp mới mặc định **thu học phí cuối kỳ**; mọi thao tác tiền có xem trước, chống bấm trùng (idempotency key), không xóa giao dịch (chỉ hủy có lý do).
 
 Quy tắc khi sửa:
-- Chạy `npm test` (phải đạt hết; hiện 28). Nếu đụng tới giao diện hoặc phần Cloudflare: `npx wrangler dev` rồi `node scripts/smoke.js http://127.0.0.1:8787` trên CSDL trống.
+- Chạy `npm test` (phải đạt hết; hiện 30). Nếu đụng tới giao diện hoặc phần Cloudflare: `npx wrangler dev` rồi `node scripts/smoke.js http://127.0.0.1:8787` trên CSDL trống.
 - Không dùng `__dirname`, `new Function`, ghi file đĩa, hay thư viện native trong đường chạy chung (Cloudflare không hỗ trợ).
 - Thay đổi CSDL: sửa `src/schema.sql` **và** thêm bước nâng cấp an toàn trong `migrate()` (`src/db.js`); thêm bảng mới vào `TABLES` trong `src/services/backup.js`.
 - Không đổi tên class Durable Object `EduspaceApp` hay migration `v1` trong `wrangler.jsonc`.

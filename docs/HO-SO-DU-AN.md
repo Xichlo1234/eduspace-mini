@@ -34,6 +34,7 @@
 | Điểm danh/điểm/nhận xét | ✔ | ✔ | chỉ lớp mình phụ trách hoặc buổi dạy thay (`assertSessionAccess`) |
 
 - Không có mật khẩu mặc định: lần đầu `/setup` cho chủ tự tạo tài khoản; tài khoản do chủ tạo phải đổi mật khẩu lần đầu (`must_change_password`).
+- **Quên mật khẩu:** nhân viên/giáo viên → chủ đặt lại ở Cài đặt → Tài khoản. Chủ → trang `/recover` nhập **mã khôi phục** = secret `RECOVERY_CODE` (≥ 12 ký tự; Cloudflare: Worker → Settings → Variables and Secrets; máy: biến môi trường). Không đặt mã thì trang tắt và chỉ hiện hướng dẫn. Sai mã bị giới hạn 8 lần/15 phút. Trên máy còn có `node scripts/reset-owner-password.js "MatKhauMoi1"`. Mã nguồn: `routes/auth.js` (`/recover`), `users.resetOwnerPassword`, `views/recover.ejs`.
 - Mật khẩu: scrypt (`src/lib/password.js`), ≥ 8 ký tự có chữ và số. Phiên đăng nhập lưu bảng `auth_sessions` (cookie `sid`, 14 ngày), CSRF token theo phiên (`_csrf` trong mọi form POST), đăng nhập sai 8 lần/15 phút bị khóa tạm theo IP+tên.
 
 ## 3. Kiến trúc & công nghệ
@@ -81,7 +82,7 @@ src/
 cf/worker.js      điểm vào Cloudflare     wrangler.jsonc  cấu hình Cloudflare
 scripts/          seed-demo.js (dữ liệu mẫu riêng data/demo.db), demo.js (npm run demo), build-cf.js, smoke.js,
                   backup.js, reset-owner-password.js, chay-trung-tam.bat, thu-nghiem-cloudflare.bat
-test/             acceptance (12), postpaid (5), http (5), http-cf-views (5 – chạy lại http với giao diện biên dịch sẵn), helpers
+test/             acceptance (12), postpaid (5), http (6), http-cf-views (6 – chạy lại http với giao diện biên dịch sẵn), helpers
 docs/             PHAN-TICH-NGHIEP-VU.md, TRIEN-KHAI-CLOUDFLARE.md, HO-SO-DU-AN.md (file này)
 ```
 
@@ -169,7 +170,7 @@ Tổng quan · Học sinh · Lớp học & lịch học · Học phí & thu chi 
 | Cài | `npm install` |
 | Dữ liệu mẫu (file riêng `data/demo.db`, cổng 3001, tài khoản `chu.demo` / `nhanvien.demo` / `gv.lan`, mật khẩu `Demo2026`) | `npm run demo` |
 | Chạy thật trên máy (`data/app.db`, cổng 3000) | `npm start` (Windows: `scripts\chay-trung-tam.bat`) |
-| Kiểm thử (28 bài) | `npm test` |
+| Kiểm thử (30 bài) | `npm test` |
 | Chạy giả lập Cloudflare (workerd) | `npx wrangler dev` (cổng 8787) |
 | Kiểm thử toàn quy trình qua HTTP trên bản CSDL trống | `node scripts/smoke.js http://127.0.0.1:8787` |
 | Kiểm tra gói triển khai | `npx wrangler deploy --dry-run --outdir /tmp/x` (≈ 831KB gzip, giới hạn Free 3MB) |
@@ -211,6 +212,7 @@ Script dữ liệu mẫu **từ chối** ghi vào file không có chữ “demo�
 | `3f56217` | Thu học phí **cuối kỳ** (trả sau) theo lớp; hạn ngày 5 tháng sau; lập tự động khi chuyển/bảo lưu/nghỉ; tạo hàng loạt 2 tháng; nhắc trên tổng quan; khoản thu khác có hạn đóng; sửa CSS `hidden`; 5 kiểm thử |
 | `4f752d8` | Chỉ dạy **tiếng Anh**: bỏ quản lý môn, gom dữ liệu về “Tiếng Anh” |
 | `7abb8c4` | Hướng dẫn Cloudflare Tunnel + `.bat` chạy trên Windows (phương án dự phòng) |
+| (xem git log) | Quên mật khẩu chủ: trang `/recover` dùng secret `RECOVERY_CODE` (chạy cả trên Cloudflare); 30 kiểm thử |
 | `611d71b` | Chạy **trực tiếp trên Cloudflare Workers + Durable Object SQLite**; Express 5; giao diện biên dịch sẵn; logo trong CSDL; sao lưu/khôi phục JSON; `scripts/smoke.js`; 28 kiểm thử |
 
 > Khi thêm thay đổi: thêm một dòng vào bảng trên, cập nhật các mục bị ảnh hưởng (quy tắc tính tiền, bản đồ mã, lưu ý) và số lượng kiểm thử.
